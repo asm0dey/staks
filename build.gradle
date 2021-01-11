@@ -8,6 +8,7 @@ buildscript {
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.30-M1'
     id 'info.solidsoft.pitest' version '1.5.2'
+    id 'maven'
 }
 
 group 'com.github.asm0dey'
