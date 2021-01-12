@@ -47,15 +47,13 @@ class StaxBuilder<T>(override val reader: XMLEventReader, func: StaxBuilder<T>.(
         return builder()
     }
 
-    override val value: () -> T get() = throw IllegalStateException("Root builder should not process anything!")
-    override val isSingular: Boolean
-        get() = throw IllegalStateException("Root builder should not process anything!")
+    private fun getDoNotCall() = IllegalStateException("Root builder should not process anything!")
 
-    override fun matches(event: XMLEvent): Boolean =
-        throw IllegalStateException("Root builder should not process anything!")
-
-    override fun process(ev: XMLEvent): Unit = throw IllegalStateException("Root builder should not process anything!")
-    override fun reset(): Unit = throw IllegalStateException("Root builder should not process anything!")
+    override val value: () -> T get() = throw getDoNotCall()
+    override val isSingular: Boolean get() = throw getDoNotCall()
+    override fun matches(event: XMLEvent): Boolean = throw getDoNotCall()
+    override fun process(ev: XMLEvent): Unit = throw getDoNotCall()
+    override fun reset(): Unit = throw getDoNotCall()
 
 }
 

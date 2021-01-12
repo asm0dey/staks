@@ -70,11 +70,12 @@ class BaseKtTest : FunSpec({
     test("handler calls to StaxBuilder should fail") {
         staks<Unit>("<root/>".byteInputStream()) {
             val ev = reader.nextEvent()
-            expect { isSingular }.toThrow<IllegalStateException>().message.toBe("Root builder should not process anything!")
-            expect { matches(ev) }.toThrow<IllegalStateException>().message.toBe("Root builder should not process anything!")
-            expect { process(ev) }.toThrow<IllegalStateException>().message.toBe("Root builder should not process anything!")
-            expect { reset() }.toThrow<IllegalStateException>().message.toBe("Root builder should not process anything!")
-            expect { value() }.toThrow<IllegalStateException>().message.toBe("Root builder should not process anything!")
+            val errorMessage = "Root builder should not process anything!"
+            expect { isSingular }.toThrow<IllegalStateException>().message toBe errorMessage
+            expect { matches(ev) }.toThrow<IllegalStateException>().message toBe errorMessage
+            expect { process(ev) }.toThrow<IllegalStateException>().message toBe errorMessage
+            expect { reset() }.toThrow<IllegalStateException>().message toBe errorMessage
+            expect { value() }.toThrow<IllegalStateException>().message toBe errorMessage
             ;
             {}
         }
