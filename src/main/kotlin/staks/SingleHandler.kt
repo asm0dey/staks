@@ -3,6 +3,9 @@ package staks
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.events.XMLEvent
 
+/**
+ * Handler, which returns first instance of type [T] ot throws exception if it wasn't found.
+ */
 class SingleHandler<T : Any>(
     private val tagName: String,
     override val reader: XMLEventReader,
@@ -11,7 +14,7 @@ class SingleHandler<T : Any>(
     CompoundHandler<T>() {
     private var result: T? = null
 
-    val builder = func()
+    private val builder = func()
 
     override val value: () -> T
         get() = {

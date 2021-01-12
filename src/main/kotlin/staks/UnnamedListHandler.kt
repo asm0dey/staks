@@ -2,6 +2,9 @@ package staks
 
 import javax.xml.stream.events.XMLEvent
 
+/**
+ * Handler which returns all instances of underlying child Handler.
+ */
 class UnnamedListHandler<T>(override val child: Handler<T>) : ContainerHandler<T, List<T>> {
     private var result = arrayListOf<T>()
 

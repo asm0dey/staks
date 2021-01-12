@@ -3,6 +3,9 @@ package staks
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.events.XMLEvent
 
+/**
+ * Handler which returns list of [T] or throws [IllegalArgumentException] if resulting list is empty.
+ */
 class ListHandler<T>(
     private val tagName: String,
     func: CompoundHandler<*>.() -> () -> T,
@@ -32,7 +35,7 @@ class ListHandler<T>(
                 try {
                     result.add(builder())
                     return
-                } catch (e: Exception) {
+                } catch (e: IllegalArgumentException) {
                     throw IllegalArgumentException("Unable to build info from $tagName", e)
                 }
             }

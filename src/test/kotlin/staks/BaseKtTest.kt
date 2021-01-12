@@ -7,7 +7,8 @@ import io.kotest.core.spec.style.FunSpec
 class BaseKtTest : FunSpec({
     test("should parse basic xml") {
         val input =
-            """<note> <to>Tove</to> <from>Jani</from> <heading>Reminder</heading> <body>Don't forget me this weekend!</body> </note>""".byteInputStream()
+            ("<note> <to>Tove</to> <from>Jani</from> <heading>Reminder</heading>" +
+                    "<body>Don't forget me this weekend!</body></note>").byteInputStream()
 
         data class Note(
             val to: String,
@@ -59,7 +60,8 @@ class BaseKtTest : FunSpec({
     }
     test("should parse list of attributes") {
         val input =
-            "<root><data attr='text' attr2='text2'>inside2</data><data attr='text3' attr2='text4'>inside2</data></root>".byteInputStream()
+            ("<root><data attr='text' attr2='text2'>inside2</data><data attr='text3' attr2='text4'>inside2</data>" +
+                    "</root>").byteInputStream()
         val attr = staks<List<String>>(input) {
             val lst = list(attribute("data", "attr"));
             { lst() }
@@ -82,9 +84,9 @@ class BaseKtTest : FunSpec({
 
     }
     test("compound list should produce list of compound objects") {
-        //language=XML
         val inp =
-            "<root><el><a>a1</a><b>b1</b><c>c1</c></el><el><a>a2</a><b>b2</b><c>c2</c></el><el><a>a3</a><b>b3</b><c>c3</c></el></root>".byteInputStream()
+            ("<root><el><a>a1</a><b>b1</b><c>c1</c></el><el><a>a2</a><b>b2</b><c>c2</c></el><el><a>a3</a><b>b3</b>" +
+                    "<c>c3</c></el></root>").byteInputStream()
         val lst = staks<List<Triple<String, String, String>>>(inp) {
             val lst = list("el") {
                 val a = tagText("a")
@@ -113,7 +115,8 @@ class BaseKtTest : FunSpec({
         )
     }
     test("optional should return null of object is not found") {
-        val inp = "<root><el><a>a1</a><b>b1</b><d>c1</d></el><el><a>a2</a><b>b2</b><c>c2</c></el><el><a>a3</a><b>b3</b><c>c3</c></el></root>".byteInputStream()
+        val inp = ("<root><el><a>a1</a><b>b1</b><d>c1</d></el><el><a>a2</a><b>b2</b><c>c2</c></el><el><a>a3</a>" +
+                "<b>b3</b><c>c3</c></el></root>").byteInputStream()
         val lst = staks<List<String?>>(inp) {
             val lst = list("el") {
                 val c = tagText("d").optional();
@@ -125,7 +128,8 @@ class BaseKtTest : FunSpec({
 
     }
     test("int should return int if can convert") {
-        val inp = "<root><el><a>a1</a><b>b1</b><c>1</c></el><el><a>a2</a><b>b2</b><c>2</c></el><el><a>a3</a><b>b3</b><c>3</c></el></root>".byteInputStream()
+        val inp = ("<root><el><a>a1</a><b>b1</b><c>1</c></el><el><a>a2</a><b>b2</b><c>2</c></el><el><a>a3</a>" +
+                "<b>b3</b><c>3</c></el></root>").byteInputStream()
         val lst = staks<List<Int>>(inp) {
             val lst = list("el") {
                 val c = tagText("c").int();
@@ -137,7 +141,8 @@ class BaseKtTest : FunSpec({
 
     }
     test("error while building list should fail build of list") {
-        val inp = "<root><el><a>a1</a><b>b1</b><c>a</c></el><el><a>a2</a><b>b2</b><c>2</c></el><el><a>a3</a><b>b3</b><c>3</c></el></root>".byteInputStream()
+        val inp = ("<root><el><a>a1</a><b>b1</b><c>a</c></el><el><a>a2</a><b>b2</b><c>2</c></el>" +
+                "<el><a>a3</a><b>b3</b><c>3</c></el></root>").byteInputStream()
         expect {
             staks<List<Int>>(inp) {
                 val lst = list("el") {
@@ -150,9 +155,9 @@ class BaseKtTest : FunSpec({
     }
 
     test("compoud list of simple lists") {
-        //language=XML
         val input =
-            "<root><el><a>x1</a><a>x2</a></el><el><a>x3</a><a>x4</a></el><el><a>x5</a><a>x6</a></el></root>".byteInputStream()
+            ("<root><el><a>x1</a><a>x2</a></el><el><a>x3</a><a>x4</a></el><el><a>x5</a><a>x6</a></el></root>")
+                .byteInputStream()
         val list = staks<List<List<String>>>(input) {
             val higher = list("el") {
                 val inner = list(tagText("a"));
@@ -163,7 +168,6 @@ class BaseKtTest : FunSpec({
         expect(list.flatten()) contains o inGiven order and only the values("x1", "x2", "x3", "x4", "x5", "x6")
     }
     test("tag text returns only first value") {
-        //language=XML
         val input = "<root><a>test1</a><a>test2</a></root>".byteInputStream()
         val tst = staks<String>(input) {
             val txt = tagText("a");
@@ -172,9 +176,32 @@ class BaseKtTest : FunSpec({
         expect(tst) toBe "test1"
     }
     test("list inside singe inside list") {
-        //language=XML
-        val input =
-            "<root><list-one><single><list-two><a>a1</a><b>b1</b></list-two><list-two><a>a2</a><b>b2</b></list-two></single></list-one><list-one><single><list-two><a>a3</a><b>b3</b></list-two><list-two><a>a4</a><b>b4</b></list-two></single></list-one></root>".byteInputStream()
+        val input = """<root>
+    <list-one>
+        <single>
+            <list-two>
+                <a>a1</a>
+                <b>b1</b>
+            </list-two>
+            <list-two>
+                <a>a2</a>
+                <b>b2</b>
+            </list-two>
+        </single>
+    </list-one>
+    <list-one>
+        <single>
+            <list-two>
+                <a>a3</a>
+                <b>b3</b>
+            </list-two>
+            <list-two>
+                <a>a4</a>
+                <b>b4</b>
+            </list-two>
+        </single>
+    </list-one>
+</root>""".byteInputStream()
         val d = staks<List<List<Pair<String, String>>>>(input) {
             val lSLP = list("list-one") {
                 val sLP = single("single") {
@@ -197,7 +224,6 @@ class BaseKtTest : FunSpec({
         )
     }
     test("single wil be read only once") {
-        //language=XML
         val input =
             "<root><single><a>a1</a><b>b1</b></single><single><a>a2</a><b>b2</b></single></root>".byteInputStream()
         val d = staks<Pair<String, String>>(input) {

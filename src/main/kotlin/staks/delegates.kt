@@ -3,7 +3,9 @@ package staks
 import javax.xml.stream.XMLEventReader
 import javax.xml.stream.events.XMLEvent
 
-
+/**
+ * Handler which converts underlying handler's String value to Int or throws [IllegalArgumentException].
+ */
 class IntHandler(override val child: Handler<String>) : DecoratingHandler<Int, String> {
     override val value: () -> Int
         get() = {
@@ -14,6 +16,11 @@ class IntHandler(override val child: Handler<String>) : DecoratingHandler<Int, S
     override fun reset() = child.reset()
 }
 
+/**
+ * Handler which extracts first met text inside tag with tagName param.
+ * @param tagName name of tag inside which text should be searched for.
+ * @throws [IllegalArgumentException] if text is not found.
+ */
 class TagTextHandler(
     private val tagName: String,
     private val reader: XMLEventReader
@@ -43,13 +50,18 @@ class TagTextHandler(
     override val isSingular: Boolean = true
 }
 
-
+/**
+ * Handler, returning value of specified attribute.
+ */
 class AttrHandler(private val tagName: String, private val attributeName: String) : Handler<String> {
     private var result: String? = null
     override val value: () -> String
         get() {
             return {
-                require(result != null) { "Unable to extract text from $tagName with attribute $attributeName, maybe it should be declared optional()" }
+                require(result != null) {
+                    "Unable to extract text from $tagName with attribute $attributeName, " +
+                            "maybe it should be declared optional()"
+                }
                 result!!
             }
         }
@@ -70,23 +82,38 @@ class AttrHandler(private val tagName: String, private val attributeName: String
     }
 }
 
-interface ContainerHandler<T, R>:Handler<R>{
+/**
+ * Basic [Handler] interface, which contains exactly on child Handler. Made for replacing one handler's result
+ * which another.
+ */
+interface ContainerHandler<T, R> : Handler<R> {
+    /**
+     * Child handler.
+     */
     val child: Handler<T>
 }
 
+/**
+ * [ContainerHandler] implementaion, which passes everything necessary tto underlying [Handler], but explicitly knows
+ * that it may return another type.
+ */
 interface DecoratingHandler<RESULT, SOURCE> : Handler<RESULT>, ContainerHandler<SOURCE, RESULT> {
     override val child: Handler<SOURCE>
     override val isSingular: Boolean get() = child.isSingular
     override fun matches(event: XMLEvent): Boolean = child.matches(event)
 }
 
+/**
+ * [DecoratingHandler] which will swallow exption while getting result from child handler and will return `null`
+ * instead.
+ */
 class OptionalHandler<Z : Any>(override val child: Handler<Z>) : DecoratingHandler<Z?, Z> {
     override val value: () -> Z?
         get() {
             return {
                 try {
                     child.value()
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
