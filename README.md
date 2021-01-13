@@ -13,6 +13,29 @@ You should use it in several cases:
 2. DOM is too heavy for your goals
 3. Your XML document may be not well-formed and the DOM parser will fail on parsing.
 
+## Installation
+
+For Maven:
+
+```xml
+<dependency>
+  <groupId>com.github.asm0dey</groupId>
+  <artifactId>staks</artifactId>
+  <version>0.0.1</version>
+</dependency>
+```
+
+For Gradle:
+```groovy
+implementation 'com.github.asm0dey:staks:0.0.1'
+```
+
+And then import
+
+```kotlin
+import staks.*
+```
+
 ## Usage
 
 The core of library is `staks` function, lying in package `staks`. For example imagine we need to gather all texts of `a` tag in XML document. Code will looks like this:
