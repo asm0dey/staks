@@ -1,4 +1,4 @@
-# staks
+# staks [![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg?label=Maven%20Central)](https://search.maven.org/search?q=g:%22com.github.asm0dey%22%20AND%20a:%22staks%22)
 Kotlin wrapper for StAX
 
 How many times did you try to remember how to use StAX or SAX? How many times did you need to parse more or less complex data structures from XML using StAX API? It is a pain, isn't it?
