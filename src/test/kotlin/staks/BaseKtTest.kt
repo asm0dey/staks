@@ -27,7 +27,7 @@ class BaseKtTest : FunSpec({
             };
             { note() }
         }
-        expect(note) toBe Note("Tove", "Jani", "Reminder", "Don't forget me this weekend!")
+        expect(note) toEqual Note("Tove", "Jani", "Reminder", "Don't forget me this weekend!")
 
     }
 
@@ -38,7 +38,7 @@ class BaseKtTest : FunSpec({
             { list() }
         }
 
-        expect(list) contains o inGiven order and only the values("one", "two", "three", "four")
+        expect(list) toContain o inGiven order and only the values("one", "two", "three", "four")
     }
 
     test("should parse attributes") {
@@ -47,7 +47,7 @@ class BaseKtTest : FunSpec({
             val txt = attribute("data", "attr");
             { txt() }
         }
-        expect(attr) toBe "text"
+        expect(attr) toEqual "text"
     }
     test("should parse pair of attributes") {
         val input = "<root><data attr='text' attr2='text2'>inside2</data></root>".byteInputStream()
@@ -56,7 +56,7 @@ class BaseKtTest : FunSpec({
             val txt2 = attribute("data", "attr2");
             { txt() to txt2() }
         }
-        expect(attr) toBe ("text" to "text2")
+        expect(attr) toEqual ("text" to "text2")
     }
     test("should parse list of attributes") {
         val input =
@@ -66,18 +66,18 @@ class BaseKtTest : FunSpec({
             val lst = list(attribute("data", "attr"));
             { lst() }
         }
-        expect(attr) contains o inGiven order and only the values("text", "text3")
+        expect(attr) toContain o inGiven order and only the values("text", "text3")
     }
 
     test("handler calls to StaxBuilder should fail") {
         staks<Unit>("<root/>".byteInputStream()) {
             val ev = reader.nextEvent()
             val errorMessage = "Root builder should not process anything!"
-            expect { isSingular }.toThrow<IllegalStateException>().message toBe errorMessage
-            expect { matches(ev) }.toThrow<IllegalStateException>().message toBe errorMessage
-            expect { process(ev) }.toThrow<IllegalStateException>().message toBe errorMessage
-            expect { reset() }.toThrow<IllegalStateException>().message toBe errorMessage
-            expect { value() }.toThrow<IllegalStateException>().message toBe errorMessage
+            expect { isSingular }.toThrow<IllegalStateException>().message toEqual errorMessage
+            expect { matches(ev) }.toThrow<IllegalStateException>().message toEqual errorMessage
+            expect { process(ev) }.toThrow<IllegalStateException>().message toEqual errorMessage
+            expect { reset() }.toThrow<IllegalStateException>().message toEqual errorMessage
+            expect { value() }.toThrow<IllegalStateException>().message toEqual errorMessage
             ;
             {}
         }
@@ -96,21 +96,21 @@ class BaseKtTest : FunSpec({
             };
             { lst() }
         }
-        expect(lst) contains o inGiven order and only the entries(
+        expect(lst) toContain o inGiven order and only the entries(
             {
-                it.feature { f(it::first) } toBe "a1"
-                it.feature { f(it::second) } toBe "b1"
-                it.feature { f(it::third) } toBe "c1"
+                it.feature { f(it::first) } toEqual "a1"
+                it.feature { f(it::second) } toEqual "b1"
+                it.feature { f(it::third) } toEqual "c1"
             },
             {
-                it.feature { f(it::first) } toBe "a2"
-                it.feature { f(it::second) } toBe "b2"
-                it.feature { f(it::third) } toBe "c2"
+                it.feature { f(it::first) } toEqual "a2"
+                it.feature { f(it::second) } toEqual "b2"
+                it.feature { f(it::third) } toEqual "c2"
             },
             {
-                it.feature { f(it::first) } toBe "a3"
-                it.feature { f(it::second) } toBe "b3"
-                it.feature { f(it::third) } toBe "c3"
+                it.feature { f(it::first) } toEqual "a3"
+                it.feature { f(it::second) } toEqual "b3"
+                it.feature { f(it::third) } toEqual "c3"
             },
         )
     }
@@ -124,7 +124,7 @@ class BaseKtTest : FunSpec({
             };
             { lst() }
         }
-        expect(lst) contains o inGiven order and only the values("c1", null, null)
+        expect(lst) toContain o inGiven order and only the values("c1", null, null)
 
     }
     test("int should return int if can convert") {
@@ -137,7 +137,7 @@ class BaseKtTest : FunSpec({
             };
             { lst() }
         }
-        expect(lst) contains o inGiven order and only the values(1, 2, 3)
+        expect(lst) toContain o inGiven order and only the values(1, 2, 3)
 
     }
     test("error while building list should fail build of list") {
@@ -151,7 +151,7 @@ class BaseKtTest : FunSpec({
                 };
                 { lst() }
             }
-        }.toThrow<IllegalArgumentException>().message toBe "Unable to build info from el"
+        }.toThrow<IllegalArgumentException>().message toEqual "Unable to build info from el"
     }
 
     test("compoud list of simple lists") {
@@ -165,7 +165,7 @@ class BaseKtTest : FunSpec({
             };
             { higher() }
         }
-        expect(list.flatten()) contains o inGiven order and only the values("x1", "x2", "x3", "x4", "x5", "x6")
+        expect(list.flatten()) toContain o inGiven order and only the values("x1", "x2", "x3", "x4", "x5", "x6")
     }
     test("tag text returns only first value") {
         val input = "<root><a>test1</a><a>test2</a></root>".byteInputStream()
@@ -173,7 +173,7 @@ class BaseKtTest : FunSpec({
             val txt = tagText("a");
             { txt() }
         }
-        expect(tst) toBe "test1"
+        expect(tst) toEqual "test1"
     }
     test("list inside singe inside list") {
         val input = """<root>
@@ -216,7 +216,7 @@ class BaseKtTest : FunSpec({
             };
             { lSLP() }
         }
-        expect(d.flatten()) contains o inGiven order and only the values(
+        expect(d.flatten()) toContain o inGiven order and only the values(
             "a1" to "b1",
             "a2" to "b2",
             "a3" to "b3",
@@ -237,7 +237,7 @@ class BaseKtTest : FunSpec({
             };
             { sSP() }
         }
-        expect(d) toBe ("a1" to "b1")
+        expect(d) toEqual ("a1" to "b1")
     }
 
 })
