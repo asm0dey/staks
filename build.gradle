@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        atrium_version = '0.16.0'
+        atrium_version = '0.18.0'
         kotest_version = "4.4.3"
     }
 }
