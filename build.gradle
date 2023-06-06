@@ -9,7 +9,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.21'
     id 'info.solidsoft.pitest' version '1.5.2'
     id 'maven'
-    id "io.gitlab.arturbosch.detekt" version "1.14.1"
+    id "io.gitlab.arturbosch.detekt" version "1.23.0"
     id "org.jetbrains.dokka" version "1.4.20"
     // publishing
     id 'maven-publish'
