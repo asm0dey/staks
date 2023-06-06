@@ -17,7 +17,7 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew dokkaHtml
       - name: GitHub Pages
-        uses: crazy-max/ghaction-github-pages@v2.2.0
+        uses: crazy-max/ghaction-github-pages@v2.7.0
         with:
           build_dir: "build/dokka/html"
           jekyll: false
