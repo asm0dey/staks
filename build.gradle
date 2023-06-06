@@ -10,7 +10,7 @@ plugins {
     id 'info.solidsoft.pitest' version '1.5.2'
     id 'maven'
     id "io.gitlab.arturbosch.detekt" version "1.14.1"
-    id "org.jetbrains.dokka" version "1.4.20"
+    id "org.jetbrains.dokka" version "1.8.20"
     // publishing
     id 'maven-publish'
     id "io.codearte.nexus-staging" version "0.22.0"
