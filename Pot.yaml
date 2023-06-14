@@ -1,0 +1,13 @@
+product:
+  type: lib
+  platforms: [ jvm ]
+
+dependencies:
+  - com.fasterxml.woodstox:woodstox-core:6.5.1
+  - org.jetbrains.kotlin:kotlin-stdlib:1.8.21
+  - org.jetbrains.kotlin:kotlin-reflect:1.8.21
+
+test-dependencies:
+  - io.kotest:kotest-runner-junit5:4.4.3
+  - ch.tutteli.atrium:atrium-infix-en_GB:0.18.0
+

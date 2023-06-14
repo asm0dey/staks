@@ -88,13 +88,11 @@ class BaseKtTest : FunSpec({
             ("<root><el><a>a1</a><b>b1</b><c>c1</c></el><el><a>a2</a><b>b2</b><c>c2</c></el><el><a>a3</a><b>b3</b>" +
                     "<c>c3</c></el></root>").byteInputStream()
         val lst = staks<List<Triple<String, String, String>>>(inp) {
-            val lst = list("el") {
-                val a = tagText("a")
-                val b = tagText("b")
-                val c = tagText("c");
-                { Triple(a(), b(), c()) }
-            };
-            { lst() }
+            {
+                list("el") {
+                    { Triple(tagText("a")(), tagText("b")(), tagText("c")()) }
+                }()
+            }
         }
         expect(lst) toContain o inGiven order and only the entries(
             {
