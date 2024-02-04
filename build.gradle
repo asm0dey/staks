@@ -7,7 +7,7 @@ buildscript {
 
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.8.21'
-    id 'info.solidsoft.pitest' version '1.9.11'
+    id 'info.solidsoft.pitest' version '1.15.0'
     id "org.jetbrains.dokka" version "1.8.20"
     id "com.github.ben-manes.versions" version "0.46.0"
     // publishing
