@@ -11,11 +11,11 @@ import javax.xml.stream.XMLStreamConstants
 /**
  * Represents an XML event emitted by the Flow-based parser.
  */
-sealed interface XmlEvent {
-    interface HasNameAndPrefix : XmlEvent {
-        val name: String
-        val prefix: String?
-        val namespaceURI: String?
+public sealed interface XmlEvent {
+    public sealed interface HasNameAndPrefix : XmlEvent {
+        public val name: String
+        public val prefix: String?
+        public val namespaceURI: String?
     }
 
     /**
@@ -27,7 +27,7 @@ sealed interface XmlEvent {
      * @property prefix The namespace prefix of the element, null if no prefix
      * @property namespaceURI The namespace URI of the element, null if no namespace
      */
-    data class StartElement(
+    public data class StartElement(
         override val name: String,
         val attributes: Map<String, String>,
         val attributeNamespaces: Map<String, String> = emptyMap(),
@@ -43,7 +43,7 @@ sealed interface XmlEvent {
      * @property prefix The namespace prefix of the element, null if no prefix
      * @property namespaceURI The namespace URI of the element, null if no namespace
      */
-    data class EndElement(
+    public data class EndElement(
         override val name: String,
         override val prefix: String? = null,
         override val namespaceURI: String? = null
@@ -54,7 +54,7 @@ sealed interface XmlEvent {
      *
      * @property text The text content
      */
-    data class Text(val text: String) : XmlEvent
+    public data class Text(val text: String) : XmlEvent
 }
 
 /**
@@ -64,8 +64,7 @@ sealed interface XmlEvent {
  * @param enableNamespaces Whether to enable namespace support (default: true)
  * @return A Flow of XML events
  */
-@Suppress("SpellCheckingInspection")
-fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<XmlEvent> = flow {
+public fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<XmlEvent> = flow {
     val xmlInputFactory = XMLInputFactory.newInstance()
     // Configure the factory to coalesce adjacent character data
     xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, true)
@@ -156,8 +155,7 @@ fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<XmlEvent> 
  * @param block The suspend block that defines how to parse the XML using the Flow of events
  * @return The result of the parsing operation
  */
-@Suppress("SpellCheckingInspection")
-suspend fun <T> staks(input: InputStream, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
+public suspend fun <T> staks(input: InputStream, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
     val flow = staks(input, enableNamespaces)
     flow.enableNamespaces = enableNamespaces
     return flow.block()
@@ -171,8 +169,7 @@ suspend fun <T> staks(input: InputStream, enableNamespaces: Boolean = true, bloc
  * @param block The suspend block that defines how to parse the XML using the Flow of events
  * @return The result of the parsing operation
  */
-@Suppress("SpellCheckingInspection")
-suspend fun <T> staks(input: String, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
+public suspend fun <T> staks(input: String, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
     val flow = staks(input.byteInputStream(), enableNamespaces)
     flow.enableNamespaces = enableNamespaces
     return flow.block()
@@ -186,8 +183,7 @@ suspend fun <T> staks(input: String, enableNamespaces: Boolean = true, block: su
  * @param block The suspend block that defines how to parse the XML using the Flow of events
  * @return The result of the parsing operation
  */
-@Suppress("SpellCheckingInspection")
-suspend fun <T> staks(input: File, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
+public suspend fun <T> staks(input: File, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
     val flow = staks(input.inputStream().buffered(), enableNamespaces)
     flow.enableNamespaces = enableNamespaces
     return flow.block()
@@ -200,7 +196,7 @@ suspend fun <T> staks(input: File, enableNamespaces: Boolean = true, block: susp
  * @param namespaceURI The namespace URI to match, or null to match any namespace.
  * @return A Flow of text content for the specified element
  */
-fun Flow<XmlEvent>.collectText(elementName: String, namespaceURI: String? = null): Flow<String> = flow {
+public fun Flow<XmlEvent>.collectText(elementName: String, namespaceURI: String? = null): Flow<String> = flow {
     var insideElement = false
     var currentText = ""
 
@@ -252,9 +248,6 @@ fun Flow<XmlEvent>.collectText(elementName: String, namespaceURI: String? = null
                 }
             }
 
-            else -> {
-                error("Unsupported type")
-            }
         }
     }
 }
@@ -268,7 +261,7 @@ fun Flow<XmlEvent>.collectText(elementName: String, namespaceURI: String? = null
  * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
  * @return A Flow of attribute values for the specified element and attribute
  */
-fun Flow<XmlEvent>.collectAttribute(
+public fun Flow<XmlEvent>.collectAttribute(
     elementName: String,
     attributeName: String,
     elementNamespaceURI: String? = null,
@@ -356,16 +349,16 @@ private fun Flow<XmlEvent>.isElementMatch(
     val elementNameMatches = if (enableNamespaces) {
         // When namespace support is enabled, match prefix and local name separately
         if (elementPrefix != null) {
-            // If prefix is specified, match both prefix and local name
+            // If a prefix is specified, match both prefix and local name
             event.prefix == elementPrefix && event.name == elementLocalName
         } else {
-            // If no prefix is specified, match only local name
+            // If no prefix is specified, match only the local name
             event.name == elementLocalName
         }
     } else {
         // When namespace support is disabled, match the full element name
         if (elementPrefix != null) {
-            // If prefix is specified, match the full name (prefix:localName)
+            // If a prefix is specified, match the full name (prefix:localName)
             event.name == "$elementPrefix:$elementLocalName"
         } else {
             // If no prefix is specified, match only the name
@@ -388,7 +381,7 @@ private fun Flow<XmlEvent>.isElementMatch(
  *
  * @return A Flow with a single string containing the text content of the current element
  */
-fun Flow<XmlEvent>.collectCurrentText(): Flow<String> = flow {
+public fun Flow<XmlEvent>.collectCurrentText(): Flow<String> = flow {
     var textContent = ""
     var depth = 0
 
@@ -415,9 +408,6 @@ fun Flow<XmlEvent>.collectCurrentText(): Flow<String> = flow {
                 }
             }
 
-            else -> {
-                error("Unsupported type")
-            }
         }
     }
 }
@@ -429,7 +419,7 @@ fun Flow<XmlEvent>.collectCurrentText(): Flow<String> = flow {
  * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
  * @return A Flow with a single string containing the attribute value of the current element
  */
-fun Flow<XmlEvent>.collectCurrentAttribute(
+public fun Flow<XmlEvent>.collectCurrentAttribute(
     attributeName: String,
     attributeNamespaceURI: String? = null
 ): Flow<String> = flow {
@@ -493,7 +483,7 @@ fun Flow<XmlEvent>.collectCurrentAttribute(
  * @param transform A suspend function that transforms the element's events into a result.
  * @return A Flow of transformed elements.
  */
-fun <T> Flow<XmlEvent>.collectElements(
+public fun <T> Flow<XmlEvent>.collectElements(
     elementName: String,
     namespaceURI: String? = null,
     transform: suspend Flow<XmlEvent>.() -> T
@@ -513,33 +503,14 @@ fun <T> Flow<XmlEvent>.collectElements(
     collect { event ->
         when (event) {
             is XmlEvent.StartElement -> {
-                val nameMatches = if (enableNamespaces) {
-                    // When namespace support is enabled, match prefix and local name separately
-                    if (prefix != null) {
-                        // If prefix is specified, match both prefix and local name
-                        event.prefix == prefix && event.name == localName
-                    } else {
-                        // If no prefix is specified, match only local name
-                        event.name == localName
-                    }
-                } else {
-                    // When namespace support is disabled, match the full element name
-                    if (prefix != null) {
-                        // If prefix is specified, match the full name (prefix:localName)
-                        event.name == "$prefix:$localName"
-                    } else {
-                        // If no prefix is specified, match only the name
-                        event.name == elementName
-                    }
-                }
+                val (nameMatches, namespaceMatches) = isElementMatch(
+                    prefix,
+                    event,
+                    localName,
+                    namespaceURI,
+                    event.name == elementName
+                )
 
-                val namespaceMatches = if (enableNamespaces && namespaceURI != null) {
-                    // If namespace URI is specified and namespace support is enabled, match it
-                    event.namespaceURI == namespaceURI
-                } else {
-                    // If no namespace URI is specified or namespace support is disabled, match any namespace
-                    true
-                }
 
                 if (nameMatches && namespaceMatches && depth == 0) {
                     insideElement = true
@@ -579,9 +550,6 @@ fun <T> Flow<XmlEvent>.collectElements(
                 }
             }
 
-            else -> {
-                error("Unsupported type")
-            }
         }
     }
 }

@@ -23,13 +23,18 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
-    jvmToolchain(23)
+    jvmToolchain(11)
 
     explicitApi()
 }
 
 java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+        vendor = JvmVendorSpec.BELLSOFT
+    }
     withSourcesJar()
     withJavadocJar()
 }
@@ -71,7 +76,7 @@ publishing {
     repositories {
         maven {
             name = "OSSRH"
-            url = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            url = uri("https://oss.sonatype.org/service/local/staging/deploy/maven2/")
             credentials {
                 username = System.getenv("OSSRH_USERNAME") ?: project.findProperty("ossrhUsername") as String?
                 password = System.getenv("OSSRH_PASSWORD") ?: project.findProperty("ossrhPassword") as String?

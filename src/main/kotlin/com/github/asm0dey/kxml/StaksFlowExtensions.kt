@@ -27,19 +27,19 @@ private class FlowProperty<T>(private val initialValue: T) : ReadWriteProperty<F
  * A property that stores namespaces in the staks context.
  * This property can be set at the beginning of the staks block and used in later queries.
  */
-var Flow<XmlEvent>.namespaces: Map<String, String> by FlowProperty(emptyMap())
+public var Flow<XmlEvent>.namespaces: Map<String, String> by FlowProperty(emptyMap())
 
 /**
  * A property that indicates whether namespace support is enabled.
  * This property is set by the staks function and used by collection functions to adjust their behavior.
  */
-var Flow<XmlEvent>.enableNamespaces: Boolean by FlowProperty(true)
+public var Flow<XmlEvent>.enableNamespaces: Boolean by FlowProperty(true)
 
 /**
  * An interface that represents the result of a value operation.
  * This interface defines methods for type conversion and value retrieval.
  */
-interface ValueResult {
+public interface ValueResult {
     /**
      * Converts the value to an integer.
      *
@@ -47,7 +47,7 @@ interface ValueResult {
      * @throws NumberFormatException if the value cannot be converted to an integer
      * @throws NullPointerException if the value is null
      */
-    fun int(): Int
+    public fun int(): Int
 
     /**
      * Converts the value to a long.
@@ -56,7 +56,7 @@ interface ValueResult {
      * @throws NumberFormatException if the value cannot be converted to a long
      * @throws NullPointerException if the value is null
      */
-    fun long(): Long
+    public fun long(): Long
 
     /**
      * Converts the value to a double.
@@ -65,7 +65,7 @@ interface ValueResult {
      * @throws NumberFormatException if the value cannot be converted to a double
      * @throws NullPointerException if the value is null
      */
-    fun double(): Double
+    public fun double(): Double
 
     /**
      * Converts the value to a boolean.
@@ -73,7 +73,7 @@ interface ValueResult {
      * @return The boolean value
      * @throws NullPointerException if the value is null
      */
-    fun boolean(): Boolean
+    public fun boolean(): Boolean
 
     /**
      * Gets the raw value.
@@ -81,8 +81,8 @@ interface ValueResult {
      * @return The raw value
      * @throws NullPointerException if the value is null
      */
-    fun value(): String
-    fun string(): String
+    public fun value(): String
+    public fun string(): String
 }
 
 /**
@@ -90,7 +90,7 @@ interface ValueResult {
  * This class wraps a ValueResult and allows for null values.
  */
 @Suppress("unused")
-class NullableValueResult<T : ValueResult>(val result: T?) {
+public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
     /**
      * Converts the value to a long.
@@ -98,7 +98,7 @@ class NullableValueResult<T : ValueResult>(val result: T?) {
      * @return The long value or null if the value is null
      * @throws NumberFormatException if the value cannot be converted to a long
      */
-    fun long(): Long? = try {
+    public fun long(): Long? = try {
         result?.long()
     } catch (e: NullPointerException) {
         null
@@ -110,7 +110,7 @@ class NullableValueResult<T : ValueResult>(val result: T?) {
      * @return The double value or null if the value is null
      * @throws NumberFormatException if the value cannot be converted to a double
      */
-    fun double(): Double? = try {
+    public fun double(): Double? = try {
         result?.double()
     } catch (e: NullPointerException) {
         null
@@ -121,7 +121,7 @@ class NullableValueResult<T : ValueResult>(val result: T?) {
      *
      * @return The boolean value or null if the value is null
      */
-    fun boolean(): Boolean? = try {
+    public fun boolean(): Boolean? = try {
         result?.boolean()
     } catch (e: NullPointerException) {
         null
@@ -138,8 +138,8 @@ class NullableValueResult<T : ValueResult>(val result: T?) {
         null
     }
 
-    operator fun unaryPlus() = value()
-    fun string() = value()
+    public operator fun unaryPlus(): String? = value()
+    public fun string(): String? = value()
 
     /**
      * Returns a string representation of the value.
@@ -155,7 +155,7 @@ class NullableValueResult<T : ValueResult>(val result: T?) {
  * @return The integer value or null if the value is null
  * @throws NumberFormatException if the value cannot be converted to an integer
  */
-fun <T : ValueResult> NullableValueResult<T>.int(): Int? = try {
+public fun <T : ValueResult> NullableValueResult<T>.int(): Int? = try {
     result?.int()
 } catch (e: NullPointerException) {
     null
@@ -165,7 +165,7 @@ fun <T : ValueResult> NullableValueResult<T>.int(): Int? = try {
  * A class that represents the result of a tag value operation.
  * This class allows for safe handling of tag value operations and provides type conversion methods.
  */
-class TagValueResult(private val value: String?) : ValueResult {
+public class TagValueResult(private val value: String?) : ValueResult {
     /**
      * Converts the tag value to an integer.
      *
@@ -208,8 +208,8 @@ class TagValueResult(private val value: String?) : ValueResult {
      * @throws NullPointerException if the tag value is null
      */
     override fun value(): String = value!!
-    operator fun unaryPlus() = value()
-    override fun string() = value()
+    public operator fun unaryPlus(): String = value()
+    override fun string(): String = value()
 
     /**
      * Returns a string representation of the tag value.
@@ -223,7 +223,7 @@ class TagValueResult(private val value: String?) : ValueResult {
  * A class that represents the result of an attribute operation.
  * This class allows for safe handling of attribute operations and provides type conversion methods.
  */
-class AttributeResult(private val value: String?) : ValueResult {
+public class AttributeResult(private val value: String?) : ValueResult {
     /**
      * Converts the attribute value to an integer.
      *
@@ -274,8 +274,8 @@ class AttributeResult(private val value: String?) : ValueResult {
      * @return The raw value of the attribute
      * @throws NullPointerException if the attribute value is null
      */
-    operator fun unaryPlus() = value()
-    override fun string() = value()
+    public operator fun unaryPlus(): String = value()
+    override fun string(): String = value()
 
     /**
      * Returns a string representation of the attribute value.
@@ -291,7 +291,7 @@ class AttributeResult(private val value: String?) : ValueResult {
  * @param tagName The name of the tag to get the value from
  * @return A TagValueResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.tagValue(tagName: String): TagValueResult {
+public suspend fun Flow<XmlEvent>.tagValue(tagName: String): TagValueResult {
     val value = collectText(tagName).firstOrNull()
     return TagValueResult(value)
 }
@@ -303,7 +303,7 @@ suspend fun Flow<XmlEvent>.tagValue(tagName: String): TagValueResult {
  * @param namespaceURI The namespace URI to match
  * @return A TagValueResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.tagText(tagName: String, namespaceURI: String?): TagValueResult {
+public suspend fun Flow<XmlEvent>.tagText(tagName: String, namespaceURI: String?): TagValueResult {
     val value = collectText(tagName, namespaceURI).firstOrNull()
     return TagValueResult(value)
 }
@@ -313,7 +313,7 @@ suspend fun Flow<XmlEvent>.tagText(tagName: String, namespaceURI: String?): TagV
  *
  * @return A TagValueResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.text(): TagValueResult {
+public suspend fun Flow<XmlEvent>.text(): TagValueResult {
     val value = collectCurrentText().firstOrNull()
     return TagValueResult(value)
 }
@@ -327,7 +327,7 @@ suspend fun Flow<XmlEvent>.text(): TagValueResult {
  * @param attributeNamespaceURI The namespace URI of the attribute, or null to match any namespace
  * @return An AttributeResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.attribute(
+public suspend fun Flow<XmlEvent>.attribute(
     tagName: String, 
     attributeName: String, 
     tagNamespaceURI: String? = null,
@@ -344,7 +344,7 @@ suspend fun Flow<XmlEvent>.attribute(
  * @param attributeNamespaceURI The namespace URI of the attribute, or null to match any namespace
  * @return An AttributeResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.attribute(
+public suspend fun Flow<XmlEvent>.attribute(
     attributeName: String,
     attributeNamespaceURI: String? = null
 ): AttributeResult {
@@ -358,7 +358,7 @@ suspend fun Flow<XmlEvent>.attribute(
  * @param T : ValueResult that should be treated as nullable
  * @return A NullableValueResult that wraps the ValueResult
  */
-fun <T : ValueResult> T?.nullable(): NullableValueResult<T> = NullableValueResult(this)
+public fun <T : ValueResult> T?.nullable(): NullableValueResult<T> = NullableValueResult(this)
 
 /**
  * Extension function to collect elements and transform them using a block.
@@ -368,7 +368,7 @@ fun <T : ValueResult> T?.nullable(): NullableValueResult<T> = NullableValueResul
  * @param block The block that defines how to transform each element
  * @return A list of transformed elements
  */
-suspend fun <T> Flow<XmlEvent>.list(
+public suspend fun <T> Flow<XmlEvent>.list(
     tagName: String, 
     namespaceURI: String? = null,
     block: suspend Flow<XmlEvent>.() -> T
@@ -385,7 +385,7 @@ suspend fun <T> Flow<XmlEvent>.list(
  * @param block The block that defines how to transform each element
  * @return A list of transformed elements
  */
-suspend fun <T> Flow<XmlEvent>.list(
+public suspend fun <T> Flow<XmlEvent>.list(
     tagName: String,
     block: suspend Flow<XmlEvent>.() -> T
 ): List<T> {
@@ -400,7 +400,7 @@ suspend fun <T> Flow<XmlEvent>.list(
  * @param block The block that defines how to transform each element
  * @return A flow of transformed elements
  */
-fun <T> Flow<XmlEvent>.flow(
+public fun <T> Flow<XmlEvent>.flow(
     tagName: String, 
     namespaceURI: String? = null,
     block: suspend Flow<XmlEvent>.() -> T
@@ -413,7 +413,7 @@ fun <T> Flow<XmlEvent>.flow(
  *
  * @return The name of the root element
  */
-suspend fun Flow<XmlEvent>.rootName(): String? {
+public suspend fun Flow<XmlEvent>.rootName(): String? {
     var rootName: String? = null
     collect { event ->
         if (event is XmlEvent.StartElement && rootName == null) {
@@ -430,7 +430,7 @@ suspend fun Flow<XmlEvent>.rootName(): String? {
  * @param attributeName The name of the attribute to get
  * @return An AttributeResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.rootAttribute(attributeName: String): AttributeResult {
+public suspend fun Flow<XmlEvent>.rootAttribute(attributeName: String): AttributeResult {
     var attributeValue: String? = null
     collect { event ->
         if (event is XmlEvent.StartElement && attributeValue == null) {
@@ -448,7 +448,7 @@ suspend fun Flow<XmlEvent>.rootAttribute(attributeName: String): AttributeResult
  *
  * @return A TagValueResult that can be used to get the value with type conversion
  */
-suspend fun Flow<XmlEvent>.rootText(): TagValueResult {
+public suspend fun Flow<XmlEvent>.rootText(): TagValueResult {
     val rootTextContent = StringBuilder()
     var insideRoot = false
     var depth = 0
@@ -476,7 +476,6 @@ suspend fun Flow<XmlEvent>.rootText(): TagValueResult {
                 }
             }
 
-            else -> error("Unexpected event: $event")
         }
     }
 
@@ -492,7 +491,7 @@ suspend fun Flow<XmlEvent>.rootText(): TagValueResult {
  * @param prefix The namespace prefix to resolve
  * @return The namespace URI for the given prefix, or null if the prefix is not found
  */
-suspend fun Flow<XmlEvent>.resolveNamespace(prefix: String): String? {
+public suspend fun Flow<XmlEvent>.resolveNamespace(prefix: String): String? {
     // Create a map to store all namespace declarations
     val namespaces = mutableMapOf<String, String>()
 
@@ -514,7 +513,7 @@ suspend fun Flow<XmlEvent>.resolveNamespace(prefix: String): String? {
  *
  * @return A map of namespace prefixes to URIs
  */
-suspend fun Flow<XmlEvent>.getNamespaces(): Map<String, String> {
+public suspend fun Flow<XmlEvent>.getNamespaces(): Map<String, String> {
     return fold(mutableMapOf()) { namespaces, event ->
         if (event is XmlEvent.StartElement) {
             namespaces.putAll(event.namespaces)
