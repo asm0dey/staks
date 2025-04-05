@@ -3,6 +3,7 @@
 [![JVM](https://img.shields.io/badge/JVM-23-blue.svg)](https://www.oracle.com/java/technologies/javase/jdk23-archive-downloads.html)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg)](https://search.maven.org/search?q=g:com.github.asm0dey%20AND%20a:staks)
 
 A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built on top of StAX and Kotlin Coroutines, it provides both synchronous and asynchronous (Flow-based) APIs for efficient XML processing.
 
@@ -56,7 +57,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.asm0dey.kxml-parser:kxml-parser:1.0-SNAPSHOT")
+    implementation("com.github.asm0dey:staks:1.0.0")
 }
 ```
 
@@ -64,9 +65,9 @@ dependencies {
 
 ```xml
 <dependency>
-    <groupId>com.github.asm0dey.kxml-parser</groupId>
-    <artifactId>kxml-parser</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <groupId>com.github.asm0dey</groupId>
+    <artifactId>staks</artifactId>
+    <version>1.0.0</version>
 </dependency>
 ```
 
