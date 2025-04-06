@@ -81,7 +81,7 @@ Staks provides two complementary approaches to XML parsing:
 
 ### Low-Level API
 
-The low-level API gives you direct access to the XML event stream through Kotlin Flows. It's designed for:
+The low-level API gives you direct access to the XML event stream through Kotlin Flows and the StaksContext class. It's designed for:
 
 - Maximum flexibility and control over the parsing process
 - Streaming large XML documents efficiently
@@ -90,9 +90,9 @@ The low-level API gives you direct access to the XML event stream through Kotlin
 Key components of the low-level API include:
 
 - `staks(input)`: Creates a Flow of XML events from various input sources
-- `collectText()`: Collects text content from specific elements
-- `collectAttribute()`: Extracts attribute values from elements
-- `collectElements()`: Processes elements and their content
+- `StaksContext.collectText()`: Collects text content from specific elements
+- `StaksContext.collectAttribute()`: Extracts attribute values from elements
+- `StaksContext.collectElements()`: Processes elements and their content
 
 ### High-Level DSL
 
@@ -105,10 +105,10 @@ Built on top of the low-level API, the high-level DSL provides a more concise an
 
 Key components of the high-level DSL include:
 
-- `tagValue()`: Gets the text content of a specific tag
-- `attribute()`: Gets an attribute value
-- `list()`: Collects and transforms a list of elements
-- `flow()`: Creates a Flow of transformed elements
+- `StaksContext.tagValue()`: Gets the text content of a specific tag
+- `StaksContext.attribute()`: Gets an attribute value
+- `StaksContext.list()`: Collects and transforms a list of elements
+- `StaksContext.flow()`: Creates a Flow of transformed elements
 
 ## 🚀 Getting Started
 
@@ -194,9 +194,6 @@ val booksFromFile = runBlocking {
 The low-level API provides more control over the parsing process, which is useful for complex XML structures or when you need maximum performance:
 
 ```kotlin
-import com.github.asm0dey.kxml.collectAttribute
-import com.github.asm0dey.kxml.collectElements
-import com.github.asm0dey.kxml.collectText
 import com.github.asm0dey.kxml.staks
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
@@ -430,7 +427,7 @@ val value = staks(xml) {
 
 #### Using a Namespace Map
 
-For more complex scenarios, you can define a map of namespaces at the beginning of the staks block:
+For more complex scenarios, you can pass a map of namespaces as an argument to the staks function:
 
 ```kotlin
 val xml = """
@@ -439,10 +436,10 @@ val xml = """
     </root>
 """.trimIndent()
 
-val value = staks(xml) {
-    // Define namespaces in a map at the beginning of the staks block
-    namespaces = mapOf("myns" to "http://example.com/ns1")
+// Define namespaces in a map
+val namespaces = mapOf("myns" to "http://example.com/ns1")
 
+val value = staks(xml, namespaces) {
     // Use the namespace in a query
     tagText("element", namespaces["myns"]).string()
 }
@@ -605,7 +602,7 @@ For repeated parsing tasks, define reusable extension functions:
 ```kotlin
 // Define an extension function for parsing books
 // Note: This doesn't need to be a suspend function since the DSL functions handle suspension
-fun Flow<XmlEvent>.parseBook(): Book {
+fun StaksContext.parseBook(): Book {
   // Extract data from the current book element
   val title = tagValue("title").string()
   val author = tagValue("author").string()
@@ -628,15 +625,16 @@ val books = runBlocking {
 
 #### Minimize Namespace Lookups
 
-When working with namespaces, define a namespace map at the beginning of the staks block to minimize repeated lookups:
+When working with namespaces, define a namespace map and pass it to the staks function to minimize repeated lookups:
 
 ```kotlin
-val result = staks(xml) {
-    namespaces = mapOf(
-        "ns1" to "http://example.com/ns1",
-        "ns2" to "http://example.com/ns2"
-    )
+// Define namespaces in a map
+val namespaces = mapOf(
+    "ns1" to "http://example.com/ns1",
+    "ns2" to "http://example.com/ns2"
+)
 
+val result = staks(xml, namespaces) {
     // Use namespaces["ns1"] instead of resolveNamespace("ns1") in multiple places
     list("element", namespaces["ns1"]) {
         // ...
@@ -671,7 +669,7 @@ You can create custom element collectors for specific XML structures:
 
 ```kotlin
 // Custom collector for address elements
-fun Flow<XmlEvent>.collectAddress(): Flow<Address> = flow {
+fun StaksContext.collectAddress(): Flow<Address> = flow {
     collectElements("address") {
         val street = collectText("street").first()
         val city = collectText("city").first()
@@ -692,7 +690,7 @@ You can create domain-specific extensions for your particular XML format:
 
 ```kotlin
 // Extension for RSS feeds
-fun Flow<XmlEvent>.collectRssItems(): Flow<RssItem> = flow {
+fun StaksContext.collectRssItems(): Flow<RssItem> = flow {
     collectElements("item") {
         val title = collectText("title").first()
         val link = collectText("link").first()
@@ -712,28 +710,28 @@ val rssItems = staks(rssXml) {
 ### Core Functions
 
 - `staks(input: InputStream): Flow<XmlEvent>` - Creates a Flow of XML events from an input stream
-- `staks(input: InputStream, block: suspend Flow<XmlEvent>.() -> T): T` - Main entry point for the DSL with input stream
-- `staks(input: String): Flow<XmlEvent>` - Creates a Flow of XML events from a string
-- `staks(input: String, block: suspend Flow<XmlEvent>.() -> T): T` - Main entry point for the DSL with string input
-- `staks(input: File): Flow<XmlEvent>` - Creates a Flow of XML events from a file
-- `staks(input: File, block: suspend Flow<XmlEvent>.() -> T): T` - Main entry point for the DSL with file input
+- `staks(input: InputStream, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with input stream
+- `staks(input: String, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with string input
+- `staks(input: File, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with file input
 
-### Flow Extensions
+### StaksContext Methods
 
-- `Flow<XmlEvent>.collectText(elementName: String): Flow<String>` - Collects text content of a specific element
-- `Flow<XmlEvent>.collectCurrentText(): Flow<String>` - Collects text content of the current element
-- `Flow<XmlEvent>.collectAttribute(elementName: String, attributeName: String): Flow<String>` - Collects attributes of a specific element
-- `Flow<XmlEvent>.collectCurrentAttribute(attributeName: String): Flow<String>` - Collects an attribute of the current element
-- `Flow<XmlEvent>.collectElements(elementName: String, transform: suspend Flow<XmlEvent>.() -> T): Flow<T>` - Collects and transforms elements
+- `collectText(elementName: String, namespaceURI: String?): Flow<String>` - Collects text content of a specific element
+- `collectCurrentText(): Flow<String>` - Collects text content of the current element
+- `collectAttribute(elementName: String, attributeName: String, elementNamespaceURI: String?, attributeNamespaceURI: String?): Flow<String>` - Collects attributes of a specific element
+- `collectCurrentAttribute(attributeName: String, attributeNamespaceURI: String?): Flow<String>` - Collects an attribute of the current element
+- `collectElements(elementName: String, namespaceURI: String?, transform: suspend StaksContext.() -> T): Flow<T>` - Collects and transforms elements
 
-### DSL Extensions
+### DSL Methods
 
 - `tagValue(tagName: String): TagValueResult` - Gets a tag value
+- `tagText(tagName: String, namespaceURI: String?): TagValueResult` - Gets a tag value with a specific namespace URI
 - `text(): TagValueResult` - Gets the text content of the current element
-- `attribute(tagName: String, attributeName: String): AttributeResult` - Gets an attribute value
-- `attribute(attributeName: String): AttributeResult` - Gets an attribute value from the current element
-- `list(tagName: String, block: suspend Flow<XmlEvent>.() -> T): List<T>` - Parses a list of elements
-- `flow(tagName: String, block: suspend Flow<XmlEvent>.() -> T): Flow<T>` - Parses a flow of elements
+- `attribute(tagName: String, attributeName: String, tagNamespaceURI: String?, attributeNamespaceURI: String?): AttributeResult` - Gets an attribute value
+- `attribute(attributeName: String, attributeNamespaceURI: String?): AttributeResult` - Gets an attribute value from the current element
+- `list(tagName: String, namespaceURI: String?, block: suspend StaksContext.() -> T): List<T>` - Parses a list of elements
+- `list(tagName: String, block: suspend StaksContext.() -> T): List<T>` - Parses a list of elements without namespace URI
+- `flow(tagName: String, namespaceURI: String?, block: suspend StaksContext.() -> T): Flow<T>` - Parses a flow of elements
 - `nullable(): NullableValueResult<T>` - Makes a value nullable
 - `rootName(): String?` - Gets the name of the root element
 - `rootAttribute(attributeName: String): AttributeResult` - Gets an attribute value from the root element

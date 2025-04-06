@@ -1,5 +1,6 @@
 package com.github.asm0dey.kxml
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -19,7 +20,7 @@ class DisabledNamespaceTest {
         """.trimIndent()
 
         // When namespace support is disabled, the element name includes the prefix
-        val value = staks(xml, false) {
+        val value = staks(xml, emptyMap(), false) {
             collectText("ns1:element").first()
         }
 
@@ -35,15 +36,14 @@ class DisabledNamespaceTest {
         """.trimIndent()
 
         // When namespace support is disabled, namespace-related properties are null
-        staks(xml, false) {
-            collect { event ->
-                if (event is XmlEvent.StartElement && event.name == "ns1:element") {
-                    // Prefix and namespaceURI should be null
-                    assertNull(event.prefix)
-                    assertNull(event.namespaceURI)
-                    // Namespaces map should be empty
-                    assertEquals(emptyMap(), event.namespaces)
-                }
+        val flow = staks(xml.byteInputStream(), false)
+        flow.collect { event ->
+            if (event is XmlEvent.StartElement && event.name == "ns1:element") {
+                // Prefix and namespaceURI should be null
+                assertNull(event.prefix)
+                assertNull(event.namespaceURI)
+                // Namespaces map should be empty
+                assertEquals(emptyMap(), event.namespaces)
             }
         }
     }
@@ -59,19 +59,19 @@ class DisabledNamespaceTest {
         """.trimIndent()
 
         // When namespace support is disabled, we need to use the full element name including prefix
-        val ns1Values = staks(xml, false) {
+        val ns1Values = staks(xml, emptyMap(), false) {
             collectText("ns1:element").toList()
         }
         assertEquals(listOf("Value 1"), ns1Values)
 
         // Namespace URI is ignored when namespace support is disabled
-        val ns2Values = staks(xml, false) {
+        val ns2Values = staks(xml, emptyMap(), false) {
             collectText("ns2:element").toList()
         }
         assertEquals(listOf("Value 2"), ns2Values)
 
         // Elements without prefix are still accessible
-        val noNsValues = staks(xml, false) {
+        val noNsValues = staks(xml, emptyMap(), false) {
             collectText("element").toList()
         }
         assertEquals(listOf("Value 3"), noNsValues)
@@ -86,13 +86,13 @@ class DisabledNamespaceTest {
         """.trimIndent()
 
         // When namespace support is disabled, we need to use the full attribute name including prefix
-        val ns1AttrValue = staks(xml, false) {
+        val ns1AttrValue = staks(xml, emptyMap(), false) {
             collectAttribute("element", "ns1:attr").first()
         }
         assertEquals("value1", ns1AttrValue)
 
         // Attributes without prefix are still accessible
-        val attrValue = staks(xml, false) {
+        val attrValue = staks(xml, emptyMap(), false) {
             collectAttribute("element", "attr").first()
         }
         assertEquals("value2", attrValue)
@@ -107,7 +107,7 @@ class DisabledNamespaceTest {
         """.trimIndent()
 
         // When namespace support is disabled, default namespace is ignored
-        val value = staks(xml, false) {
+        val value = staks(xml, emptyMap(), false) {
             collectText("element").first()
         }
 

@@ -16,10 +16,10 @@ class NamespaceMapTest {
             </root>
         """.trimIndent()
 
-        val value = staks(xml) {
-            // Define namespaces in a map at the beginning of the staks block
-            namespaces = mapOf("myns" to "http://example.com/ns1")
+        // Define namespaces in a map
+        val namespaces = mapOf("myns" to "http://example.com/ns1")
 
+        val value = staks(xml, namespaces) {
             // Use the namespace in a query
             tagText("element", namespaces["myns"]).string()
         }
@@ -35,10 +35,10 @@ class NamespaceMapTest {
             </root>
         """.trimIndent()
 
-        val value = staks(xml) {
-            // Define namespaces in a map at the beginning of the staks block
-            namespaces = mapOf("myns" to "http://example.com/ns1")
+        // Define namespaces in a map
+        val namespaces = mapOf("myns" to "http://example.com/ns1")
 
+        val value = staks(xml, namespaces) {
             // Use the namespace in a query
             tagText("element", namespaces["myns"]).string()
         }
@@ -55,10 +55,10 @@ class NamespaceMapTest {
             </root>
         """.trimIndent()
 
-        val values = staks(xml) {
-            // Define namespaces in a map at the beginning of the staks block
-            namespaces = mapOf("myns" to "http://example.com/ns1")
+        // Define namespaces in a map
+        val namespaces = mapOf("myns" to "http://example.com/ns1")
 
+        val values = staks(xml, namespaces) {
             // Use the namespace in a list query
             list("element", namespaces["myns"]) {
                 text().string()
@@ -86,21 +86,20 @@ class NamespaceMapTest {
         println("[DEBUG_LOG] XML: $xml")
 
         // First, let's debug what attributes and namespaces are being parsed
-        staks(xml) {
-            collect { event ->
-                if (event is XmlEvent.StartElement && event.name == "element") {
-                    println("[DEBUG_LOG] Element: ${event.name}")
-                    println("[DEBUG_LOG] Attributes: ${event.attributes}")
-                    println("[DEBUG_LOG] Attribute Namespaces: ${event.attributeNamespaces}")
-                    println("[DEBUG_LOG] Namespaces: ${event.namespaces}")
-                }
+        val flow = staks(xml.byteInputStream(), true)
+        flow.collect { event ->
+            if (event is XmlEvent.StartElement && event.name == "element") {
+                println("[DEBUG_LOG] Element: ${event.name}")
+                println("[DEBUG_LOG] Attributes: ${event.attributes}")
+                println("[DEBUG_LOG] Attribute Namespaces: ${event.attributeNamespaces}")
+                println("[DEBUG_LOG] Namespaces: ${event.namespaces}")
             }
         }
 
-        val value1 = staks(xml) {
-            // Define namespaces in a map at the beginning of the staks block
-            namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
+        // Define namespaces in a map
+        val namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
 
+        val value1 = staks(xml, namespaces) {
             println("[DEBUG_LOG] Looking for attribute with namespace: ${namespaces["myns1"]}")
 
             // Use the namespace in an attribute query
@@ -109,12 +108,11 @@ class NamespaceMapTest {
             result.string()
         }
 
-        val value2 = staks(xml) {
-            namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
+        val value2 = staks(xml, namespaces) {
             attribute("element", "attr", attributeNamespaceURI = namespaces["myns2"]).string()
         }
 
-        val value3 = staks(xml) {
+        val value3 = staks(xml, namespaces) {
             attribute("element", "attr").string()
         }
 
@@ -135,10 +133,10 @@ class NamespaceMapTest {
             </root>
         """.trimIndent()
 
-        val values = staks(xml) {
-            // Define namespaces in a map at the beginning of the staks block
-            namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
+        // Define namespaces in a map
+        val namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
 
+        val values = staks(xml, namespaces) {
             list("element") {
                 val value1 = attribute("attr", namespaces["myns1"]).string()
                 val value2 = attribute("attr", namespaces["myns2"]).string()
