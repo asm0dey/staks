@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class StaksFlowExtensionsTest {
@@ -320,4 +321,24 @@ class StaksFlowExtensionsTest {
         }
         assertEquals(listOf(Pair(null, 1), Pair(2, 2)), items)
     }
+    @Test
+    fun `test list of non-existing items does not fail`() = runBlocking {
+        @Language("XML") val xml = """<root>
+            |    <item>
+            |        1
+            |    </item>
+            |    <item id='2'>
+            |        2
+            |    </item>
+            |</root>""".trimMargin()
+
+        val items = staks(xml.byteInputStream()) {
+            list("non-existing") {
+                text().int()
+            }
+        }
+        assertEquals(emptyList(), items)
+        assertEquals(0, items.size)
+    }
+
 }

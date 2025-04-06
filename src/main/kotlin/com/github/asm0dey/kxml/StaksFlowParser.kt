@@ -184,9 +184,11 @@ public suspend fun <T> staks(input: String, enableNamespaces: Boolean = true, bl
  * @return The result of the parsing operation
  */
 public suspend fun <T> staks(input: File, enableNamespaces: Boolean = true, block: suspend Flow<XmlEvent>.() -> T): T {
-    val flow = staks(input.inputStream().buffered(), enableNamespaces)
-    flow.enableNamespaces = enableNamespaces
-    return flow.block()
+    input.inputStream().buffered().use {
+        val flow = staks(input.inputStream().buffered(), enableNamespaces)
+        flow.enableNamespaces = enableNamespaces
+        return flow.block()
+    }
 }
 
 /**
