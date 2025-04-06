@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.github.asm0dey"
-version = "1.0.0"
+version = "1.1.0"
 
 repositories {
     mavenCentral()
@@ -16,7 +16,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib"))
     implementation(libs.kotlinx.coroutines.core)
-    implementation(libs.stax.api)
+    implementation(libs.aalto.stax)
 
     testImplementation(kotlin("test"))
 }

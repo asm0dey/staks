@@ -1,6 +1,5 @@
 package com.github.asm0dey.kxml
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
