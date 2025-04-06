@@ -1,21 +1,25 @@
-# kxml-parser: Elegant XML Parsing for Kotlin
+# 📚 Staks: Elegant XML Parsing for Kotlin
 
 [![JVM](https://img.shields.io/badge/JVM-23-blue.svg)](https://www.oracle.com/java/technologies/javase/jdk23-archive-downloads.html)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg)](https://search.maven.org/search?q=g:com.github.asm0dey%20AND%20a:staks)
 
-A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built on top of StAX and Kotlin Coroutines, it provides both synchronous and asynchronous (Flow-based) APIs for efficient XML processing.
+A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built on top of StAX and Kotlin Coroutines, it provides both a low-level API and a high-level DSL for efficient XML processing.
 
-## Table of Contents
+## 📋 Table of Contents
 
-- [Features](#features)
-- [Installation](#installation)
+- [✨ Features](#-features)
+- [📥 Installation](#-installation)
   - [Gradle (Kotlin DSL)](#gradle-kotlin-dsl)
   - [Maven](#maven)
-- [Basic Usage](#basic-usage)
-  - [Flow-based API](#flow-based-api)
-- [Advanced Usage](#advanced-usage)
+- [🏗️ Architecture](#️-architecture)
+  - [Low-Level API](#low-level-api)
+  - [High-Level DSL](#high-level-dsl)
+- [🚀 Getting Started](#-getting-started)
+  - [High-Level DSL Examples](#high-level-dsl-examples)
+  - [Low-Level API Examples](#low-level-api-examples)
+- [🧩 Advanced Usage](#-advanced-usage)
   - [Accessing Root Element Data](#accessing-root-element-data)
   - [Handling Complex Nested Structures](#handling-complex-nested-structures)
   - [Handling Optional Elements](#handling-optional-elements)
@@ -23,22 +27,22 @@ A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built
   - [Using the Unary Plus Operator](#using-the-unary-plus-operator)
   - [Working with Namespaces](#working-with-namespaces)
   - [Handling CDATA Sections](#handling-cdata-sections)
-- [Extending the Library](#extending-the-library)
+- [🔧 Extending the Library](#-extending-the-library)
   - [Creating Custom Value Processors](#creating-custom-value-processors)
   - [Creating Custom Element Collectors](#creating-custom-element-collectors)
   - [Creating Domain-Specific Extensions](#creating-domain-specific-extensions)
-- [Best Practices](#best-practices)
+- [📝 Best Practices](#-best-practices)
   - [Error Handling](#error-handling)
   - [Performance Considerations](#performance-considerations)
-- [API Reference](#api-reference)
+- [📘 API Reference](#-api-reference)
   - [Core Functions](#core-functions)
-  - [Flow Extensions](#flow-extensions)
-  - [DSL Extensions](#dsl-extensions)
+  - [Low-Level API](#low-level-api-1)
+  - [High-Level DSL](#high-level-dsl-1)
   - [Type Conversions](#type-conversions)
-- [Contributing](#contributing)
-- [License](#license)
+- [👥 Contributing](#-contributing)
+- [📄 License](#-license)
 
-## Features
+## ✨ Features
 
 - **Idiomatic Kotlin DSL** for clean, readable XML parsing code
 - **Type-safe conversions** for XML values (Int, Long, Double, Boolean)
@@ -47,7 +51,7 @@ A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built
 - **Minimal dependencies** (only Kotlin stdlib, Coroutines, and StAX)
 - **Extensible design** for custom handlers and processors
 
-## Installation
+## 📥 Installation
 
 ### Gradle (Kotlin DSL)
 
@@ -71,16 +75,134 @@ dependencies {
 </dependency>
 ```
 
-## Basic Usage
+## 🏗️ Architecture
 
-### Flow-based API
+Staks provides two complementary approaches to XML parsing:
+
+### Low-Level API
+
+The low-level API gives you direct access to the XML event stream through Kotlin Flows. It's designed for:
+
+- Maximum flexibility and control over the parsing process
+- Streaming large XML documents efficiently
+- Building custom parsing logic for complex XML structures
+
+Key components of the low-level API include:
+
+- `staks(input)`: Creates a Flow of XML events from various input sources
+- `collectText()`: Collects text content from specific elements
+- `collectAttribute()`: Extracts attribute values from elements
+- `collectElements()`: Processes elements and their content
+
+### High-Level DSL
+
+Built on top of the low-level API, the high-level DSL provides a more concise and intuitive way to parse XML:
+
+- Fluent, type-safe interface for common parsing tasks
+- Automatic type conversions (string to int, boolean, etc.)
+- Convenient handling of optional elements
+- Simplified navigation of nested structures
+
+Key components of the high-level DSL include:
+
+- `tagValue()`: Gets the text content of a specific tag
+- `attribute()`: Gets an attribute value
+- `list()`: Collects and transforms a list of elements
+- `flow()`: Creates a Flow of transformed elements
+
+## 🚀 Getting Started
+
+### High-Level DSL Examples
 
 ```kotlin
-import kotlinx.coroutines.flow.Flow
+import com.github.asm0dey.kxml.staks
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-// Using a String directly
+// Sample XML data
+val xmlString = """
+    <library>
+        <book id="1">
+            <title>Kotlin in Action</title>
+            <year>2017</year>
+        </book>
+        <book id="2">
+            <title>Effective Kotlin</title>
+            <year>2020</year>
+        </book>
+    </library>
+""".trimIndent()
+
+// Define a data class to hold our parsed data
+data class Book(val id: Int, val title: String, val year: Int)
+
+// Using the high-level DSL for concise, readable parsing
+val booksWithDsl = runBlocking {
+    staks(xmlString) {
+        // The list() function collects all matching elements and transforms them
+        list("book") {
+            // Inside this block, we're in the context of a single book element
+            val id = attribute("id").int()           // Convert attribute to Int
+            val title = tagValue("title").string()   // Get text content as String
+            val year = tagValue("year").int()        // Get text content as Int
+            Book(id, title, year)                    // Return a Book object
+        }
+    }
+}
+// booksWithDsl is now a List<Book> with two entries
+
+// You can also use an InputStream
+val xmlInputStream = xmlString.byteInputStream()
+val booksFromStream = runBlocking {
+    staks(xmlInputStream) {
+        // Same parsing logic as above, but with more explicit comments
+        list("book") {
+            // Get the 'id' attribute from the current element and convert to Int
+            val id = attribute("id").int()
+
+            // Get the text content of the 'title' child element
+            val title = tagValue("title").string()
+
+            // Get the text content of the 'year' child element and convert to Int
+            val year = tagValue("year").int()
+
+            // Create and return a Book object with the extracted data
+            Book(id, title, year)
+        }
+    }
+}
+
+// Or parse from a File
+val xmlFile = File("books.xml") // Assuming this file exists
+val booksFromFile = runBlocking {
+    staks(xmlFile) {
+        // Using the flow() function instead of list() for streaming processing
+        // This is useful for large XML files as it processes elements one by one
+        flow("book") {
+            val id = attribute("id").int()
+            val title = tagValue("title").string()
+            val year = tagValue("year").int()
+            Book(id, title, year)
+        }.toList() // Collect the flow into a list
+    }
+}
+```
+
+### Low-Level API Examples
+
+The low-level API provides more control over the parsing process, which is useful for complex XML structures or when you need maximum performance:
+
+```kotlin
+import com.github.asm0dey.kxml.collectAttribute
+import com.github.asm0dey.kxml.collectElements
+import com.github.asm0dey.kxml.collectText
+import com.github.asm0dey.kxml.staks
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
+
+// Sample XML data
 val xmlString = """
     <library>
         <book id="1">
@@ -96,58 +218,31 @@ val xmlString = """
 
 data class Book(val id: Int, val title: String, val year: Int)
 
+// Using the low-level API for more control over the parsing process
 val books = runBlocking {
     staks(xmlString) {
+        // collectElements creates a flow of elements matching the given name
         collectElements("book") {
+            // For each book element, collect its attributes and child elements
             val id = collectAttribute("book", "id").first().toInt()
+
+            // collectText creates a flow of text content from matching elements
             val title = collectText("title").first()
             val year = collectText("year").first().toInt()
-            Book(id, title, year)
-        }.toList()
-    }
-}
 
-// books is now a List<Book> with two entries
-
-// You can also use an InputStream
-val xmlInputStream = xmlString.byteInputStream()
-val booksFromStream = runBlocking {
-    staks(xmlInputStream) {
-        // Same parsing logic as above
-        collectElements("book") {
-            val id = collectAttribute("book", "id").first().toInt()
-            val title = collectText("title").first()
-            val year = collectText("year").first().toInt()
             Book(id, title, year)
-        }.toList()
-    }
-}
-
-// Or parse from a File
-val xmlFile = File("books.xml") // Assuming this file exists
-val booksFromFile = runBlocking {
-    staks(xmlFile) {
-        // Same parsing logic as above
-        collectElements("book") {
-            val id = collectAttribute("book", "id").first().toInt()
-            val title = collectText("title").first()
-            val year = collectText("year").first().toInt()
-            Book(id, title, year)
-        }.toList()
+        }.toList() // Collect all books into a list
     }
 }
 ```
 
-## Advanced Usage
+## 🧩 Advanced Usage
 
 ### Accessing Root Element Data
 
 The library provides functions to access data from the root element:
 
 ```kotlin
-import com.github.asm0dey.kxml.rootName
-import com.github.asm0dey.kxml.rootAttribute
-import com.github.asm0dey.kxml.rootText
 import com.github.asm0dey.kxml.staks
 import kotlinx.coroutines.runBlocking
 
@@ -161,16 +256,18 @@ val xml = """
 
 val result = runBlocking {
     staks(xml) {
-        // Get the root element name
-        val rootElementName = rootName() // rootName() is a suspend function
+        // Get the root element name - in this example we know it's "library"
+        val rootElementName = "library" 
 
-        // Get attributes from the root element
-        val version = rootAttribute("version").string()
-        val count = rootAttribute("count").int()
+        // Get attributes from the root element using the attribute function
+        // First parameter is the element name, second is the attribute name
+        val version = attribute("library", "version").string()
+        val count = attribute("library", "count").int() // Automatically converts to Int
 
-        // Get text content from the root element
-        val rootText = rootText().string()
+        // Get text content from the root element using tagValue
+        val rootText = tagValue("library").string()
 
+        // Return a Triple with the extracted data
         Triple(rootElementName, version, "Count: $count, Text: $rootText")
     }
 }
@@ -424,7 +521,7 @@ val content = staks(xml) {
 // content = "FirstSecond"
 ```
 
-## Best Practices
+## 📝 Best Practices
 
 ### Error Handling
 
@@ -506,8 +603,10 @@ val result = staks(largeXmlFile) {
 For repeated parsing tasks, define reusable extension functions:
 
 ```kotlin
-// Define a suspend extension function for parsing books
-suspend fun Flow<XmlEvent>.parseBook(): Book {
+// Define an extension function for parsing books
+// Note: This doesn't need to be a suspend function since the DSL functions handle suspension
+fun Flow<XmlEvent>.parseBook(): Book {
+  // Extract data from the current book element
   val title = tagValue("title").string()
   val author = tagValue("author").string()
   val year = tagValue("year").int()
@@ -517,8 +616,10 @@ suspend fun Flow<XmlEvent>.parseBook(): Book {
 // Usage in a coroutine context
 val books = runBlocking {
   staks(xml) {
+    // The list function collects all book elements and applies our parsing function
     list("book") {
-      // The list function provides a coroutine context for its lambda
+      // Inside this lambda, we're in the context of a single book element
+      // Call our helper function to parse the current book
       parseBook()
     }
   }
@@ -543,7 +644,7 @@ val result = staks(xml) {
 }
 ```
 
-## Extending the Library
+## 🔧 Extending the Library
 
 The library is designed to be extensible. You can create your own handlers and processors on top of the existing primitives.
 
@@ -606,7 +707,7 @@ val rssItems = staks(rssXml) {
 }
 ```
 
-## API Reference
+## 📘 API Reference
 
 ### Core Functions
 
@@ -648,7 +749,7 @@ val rssItems = staks(rssXml) {
 - `.value()` - Gets the raw string value
 - `+result` - Shorthand for `result.value()`
 
-## Contributing
+## 👥 Contributing
 
 Contributions are welcome! Here's how you can contribute:
 
@@ -660,6 +761,6 @@ Contributions are welcome! Here's how you can contribute:
 
 Please make sure to update tests as appropriate.
 
-## License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
