@@ -1,8 +1,25 @@
 package com.github.asm0dey.kxml
 
 /**
- * Base interface for XML event handlers.
- * Handlers are responsible for processing XML events and producing results.
+ * Base interface for XML event handlers in the staks library.
+ * 
+ * Handlers are a core part of the internal architecture, responsible for processing XML events
+ * and producing results. They implement the visitor pattern, where each handler decides whether
+ * it can process a given event and how to extract data from it.
+ * 
+ * The library uses handlers in several ways:
+ * 
+ * 1. **Simple Handlers**: Extract single values from elements or attributes
+ * 2. **Compound Handlers**: Process nested elements and their hierarchies
+ * 
+ * While users typically don't interact with handlers directly, understanding this architecture
+ * can be helpful when extending the library with custom functionality.
+ * 
+ * The handler mechanism allows the DSL to:
+ * - Match XML events to the appropriate processors
+ * - Extract and convert values from the XML
+ * - Build hierarchical data structures
+ * - Support both eager and lazy processing modes
  */
 public interface Handler<T> {
     /**
@@ -39,10 +56,20 @@ public interface Handler<T> {
 }
 
 /**
- * Abstract base class for XML event handlers.
- * This class implements common functionality for all handlers.
+ * Abstract base class for XML event handlers, implementing common functionality.
  * 
- * @param T The type of the result
+ * The BaseHandler provides a foundation for all handler implementations in the library,
+ * handling common tasks like tracking whether the handler has been filled with data
+ * and providing a mechanism for executing extractor functions.
+ * 
+ * This class is part of the internal architecture and serves as a base for:
+ * - [SimpleHandler]: For extracting single values from elements or attributes
+ * - [CompoundHandler]: For processing nested elements and their hierarchies
+ * 
+ * The BaseHandler implements the [Handler] interface and provides default implementations
+ * for some of its methods, reducing boilerplate in concrete handler classes.
+ * 
+ * @param T The type of the result that this handler produces
  */
 public abstract class BaseHandler<T> : Handler<T> {
     /**
@@ -78,9 +105,29 @@ public abstract class BaseHandler<T> : Handler<T> {
 }
 
 /**
- * Handler for processing a single value from an XML element or attribute.
+ * Handler for extracting a single value from an XML element or attribute.
  * 
- * @param T The type of the result
+ * The SimpleHandler is used internally by methods like [StaksContext.tagValue],
+ * [StaksContext.attribute], and [StaksContext.text] to extract values from the XML.
+ * It's designed to:
+ * 
+ * 1. Match specific elements or attributes based on name and namespace
+ * 2. Execute an extractor function to extract the value
+ * 3. Store the result for retrieval
+ * 
+ * This handler is "simple" because it extracts a single value rather than processing
+ * a hierarchy of elements like [CompoundHandler] does. It's optimized for the common
+ * case of extracting text content or attribute values.
+ * 
+ * The SimpleHandler can be configured to match:
+ * - A specific element by name (tagName)
+ * - A specific attribute by name (attributeName)
+ * - The current element (when both tagName and attributeName are null)
+ * 
+ * It can also be configured to match elements or attributes with specific namespaces.
+ * 
+ * @param T The type of the result that this handler produces
+ * @param extractor The function that extracts the value from the XML
  * @param tagName The name of the tag this handler is for, or null if it's for an attribute or current element
  * @param attributeName The name of the attribute this handler is for, or null if it's for a tag
  * @param namespaceURI The namespace URI of the tag/attribute, or null to match any namespace
@@ -163,7 +210,31 @@ public class SimpleHandler<T>(
 /**
  * Handler for processing multiple XML elements and transforming them into a list of results.
  * 
- * @param T The type of each result in the list
+ * The CompoundHandler is a more complex handler that processes hierarchies of XML elements.
+ * It's used internally by methods like [StaksContext.list] and [StaksContext.flow] to:
+ * 
+ * 1. Collect all events for a specific element and its children
+ * 2. Create a new [StaksContext] for each matching element
+ * 3. Execute a transformer function on each context to produce a result
+ * 4. Collect the results into a list
+ * 
+ * Unlike [SimpleHandler], which extracts a single value, CompoundHandler can process
+ * complex nested structures. It maintains a hierarchy of child handlers that process
+ * events within the target element.
+ * 
+ * Key features:
+ * - Tracks element depth to properly handle nested elements with the same name
+ * - Collects all events for an element and its children
+ * - Creates isolated contexts for processing each element
+ * - Supports child handlers for extracting data from nested elements
+ * 
+ * This handler is the foundation for the library's ability to process complex XML
+ * structures and transform them into hierarchical domain objects.
+ * 
+ * @param T The type of each result that this handler produces
+ * @param elementName The name of the element to match
+ * @param namespaceURI The namespace URI of the element, or null to match any namespace
+ * @param transformer The function that transforms each element into a result
  */
 public class CompoundHandler<T>(
     private val elementName: String,

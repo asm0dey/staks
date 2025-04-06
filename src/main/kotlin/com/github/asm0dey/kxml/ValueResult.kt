@@ -1,8 +1,36 @@
 package com.github.asm0dey.kxml
 
 /**
- * An interface that represents the result of a value operation.
- * This interface defines methods for type conversion and value retrieval.
+ * An interface that represents the result of a value extraction operation.
+ * 
+ * ValueResult is a core part of the staks library's type conversion system. It provides
+ * methods for converting XML string values to various Kotlin types (Int, Long, Double, Boolean)
+ * in a type-safe way. This interface is implemented by [TagValueResult] for element content
+ * and [AttributeResult] for attribute values.
+ * 
+ * The interface design allows for a fluent, type-safe API where users can easily convert
+ * XML values to the appropriate Kotlin types:
+ * 
+ * ```kotlin
+ * // Convert to different types
+ * val id = tagValue("id").int()
+ * val price = tagValue("price").double()
+ * val available = tagValue("available").boolean()
+ * val name = tagValue("name").string()
+ * 
+ * // Use the unary plus operator as a shorthand for .value()
+ * val description = +tagValue("description")
+ * ```
+ * 
+ * For optional values, use the [nullable] extension function:
+ * 
+ * ```kotlin
+ * val optionalValue = tagValue("optional").nullable().string()
+ * // optionalValue will be null if the element doesn't exist
+ * ```
+ * 
+ * All conversion methods will throw exceptions if the value is null or cannot be
+ * converted to the requested type. Use [nullable] to handle optional values safely.
  */
 public interface ValueResult {
     /**
@@ -51,8 +79,32 @@ public interface ValueResult {
 }
 
 /**
- * A class that represents a nullable value result.
- * This class wraps a ValueResult and allows for null values.
+ * A class that represents a nullable value result, allowing for safe handling of optional XML elements.
+ * 
+ * NullableValueResult wraps a [ValueResult] and provides nullable versions of all its
+ * conversion methods. This is essential for handling optional elements or attributes in XML,
+ * as it allows you to safely extract values without throwing NullPointerExceptions.
+ * 
+ * This class is typically used through the [nullable] extension function:
+ * 
+ * ```kotlin
+ * // Handle an optional element
+ * val optionalValue = tagValue("optional-element").nullable().string()
+ * // optionalValue will be null if the element doesn't exist
+ * 
+ * // Handle an optional attribute
+ * val optionalAttr = attribute("element", "optional-attr").nullable().int()
+ * // optionalAttr will be null if the attribute doesn't exist
+ * 
+ * // Use in conditional logic
+ * val count = tagValue("count").nullable().int()
+ * if (count != null && count > 0) {
+ *     // Process count
+ * }
+ * ```
+ * 
+ * All conversion methods in this class return null instead of throwing exceptions
+ * when the underlying value is null, making it ideal for handling optional XML data.
  */
 @Suppress("unused")
 public class NullableValueResult<T : ValueResult>(public val result: T?) {
