@@ -4,6 +4,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg)](https://search.maven.org/search?q=g:com.github.asm0dey%20AND%20a:staks)
+[![Build](https://github.com/asm0dey/staks/actions/workflows/build.yml/badge.svg)](https://github.com/asm0dey/staks/actions/workflows/build.yml)
 
 A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built on top of StAX and Kotlin Coroutines, it provides both a low-level API and a high-level DSL for efficient XML processing.
 
