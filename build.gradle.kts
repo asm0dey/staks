@@ -96,22 +96,20 @@ signing {
     }
 }
 
-tasks.dokkaHtml {
-    outputDirectory.set(file("${layout.buildDirectory.get()}/dokka/html"))
-
-    // Configure Dokka
-    dokkaSourceSets {
-        configureEach {
-            // Include source links to GitHub
-            sourceLink {
-                localDirectory.set(file("src/main/kotlin"))
-                remoteUrl.set(uri("https://github.com/asm0dey/staks/blob/main/src/main/kotlin").toURL())
-                remoteLineSuffix.set("#L")
-            }
-
-            // Add project information
-            moduleName.set("staks")
-            includes.from("README.md")
+dokka {
+    moduleName.set("staks")
+    dokkaPublications.html {
+        suppressInheritedMembers.set(true)
+        failOnWarning.set(true)
+    }
+    dokkaSourceSets.main {
+        sourceLink {
+            localDirectory.set(file("src/main/kotlin"))
+            remoteUrl("https://github.com/asm0dey/staks/blob/main/src/main/kotlin")
+            remoteLineSuffix.set("#L")
         }
+    }
+    pluginsConfiguration.html {
+        footerMessage.set("(c) asm0dey")
     }
 }

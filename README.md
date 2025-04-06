@@ -89,7 +89,7 @@ The documentation is automatically generated and deployed to GitHub Pages whenev
 If you want to generate the documentation locally, you can run:
 
 ```bash
-./gradlew dokkaHtml
+./gradlew dokkaGenerate
 ```
 
 The generated documentation will be available in the `build/dokka/html` directory.
