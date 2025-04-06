@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg)](https://search.maven.org/search?q=g:com.github.asm0dey%20AND%20a:staks)
 [![Build](https://github.com/asm0dey/staks/actions/workflows/build.yml/badge.svg)](https://github.com/asm0dey/staks/actions/workflows/build.yml)
+[![Documentation](https://github.com/asm0dey/staks/actions/workflows/docs.yml/badge.svg)](https://github.com/asm0dey/staks/actions/workflows/docs.yml)
 
 A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built on top of StAX and Kotlin Coroutines, it provides both a low-level API and a high-level DSL for efficient XML processing.
 
@@ -14,6 +15,7 @@ A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built
 - [📥 Installation](#-installation)
   - [Gradle (Kotlin DSL)](#gradle-kotlin-dsl)
   - [Maven](#maven)
+- [📚 Documentation](#-documentation)
 - [🏗️ Architecture](#️-architecture)
   - [Low-Level API](#low-level-api)
   - [High-Level DSL](#high-level-dsl)
@@ -75,6 +77,22 @@ dependencies {
     <version>1.0.0</version>
 </dependency>
 ```
+
+## 📚 Documentation
+
+The project's API documentation is generated using [Dokka](https://github.com/Kotlin/dokka) version 2.0.0 and is available online:
+
+- [API Documentation](https://asm0dey.github.io/staks/) - Comprehensive documentation of all public APIs
+
+The documentation is automatically generated and deployed to GitHub Pages whenever changes are pushed to the main branch.
+
+If you want to generate the documentation locally, you can run:
+
+```bash
+./gradlew dokkaHtml
+```
+
+The generated documentation will be available in the `build/dokka/html` directory.
 
 ## 🏗️ Architecture
 

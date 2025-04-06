@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.org.jetbrains.kotlinx.kover)
+    id("org.jetbrains.dokka") version "2.0.0"
     `maven-publish`
     signing
 }
@@ -92,5 +93,25 @@ signing {
     if (signingKey != null && signingPassword != null) {
         useInMemoryPgpKeys(signingKey, signingPassword)
         sign(publishing.publications["maven"])
+    }
+}
+
+tasks.dokkaHtml {
+    outputDirectory.set(file("${layout.buildDirectory.get()}/dokka/html"))
+
+    // Configure Dokka
+    dokkaSourceSets {
+        configureEach {
+            // Include source links to GitHub
+            sourceLink {
+                localDirectory.set(file("src/main/kotlin"))
+                remoteUrl.set(uri("https://github.com/asm0dey/staks/blob/main/src/main/kotlin").toURL())
+                remoteLineSuffix.set("#L")
+            }
+
+            // Add project information
+            moduleName.set("staks")
+            includes.from("README.md")
+        }
     }
 }
