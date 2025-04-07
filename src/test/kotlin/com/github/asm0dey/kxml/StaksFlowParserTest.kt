@@ -6,9 +6,11 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import java.io.File
+import java.io.InputStream
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class StaksFlowParserTest {
 
@@ -138,6 +140,7 @@ class StaksFlowParserTest {
         assertEquals(Book(2, "Book 2", "Author 2", 2021), books[1])
         assertEquals(Book(3, "Book 3", "Author 3", 2022), books[2])
     }
+
     @Test
     fun `test attribute extraction from self-closing tag`() = runBlocking {
         val inp = "<root><a href=\"link\"/></root>".byteInputStream()
@@ -172,5 +175,40 @@ class StaksFlowParserTest {
         }
 
         assertEquals("file-value", value)
+    }
+
+    @Test
+    fun flowTerminatesEarly() = runBlocking {
+        val b = StringBuilder()
+        b.append("<root>")
+        b.append("<item>value</item>")
+        repeat(100000) {
+            b.append("<notneeded>value$it</notneeded>")
+        }
+        b.append("</root>")
+        val inp = b.toString()
+        var count = 0
+        val inputStreamWrapper = {
+            val ist = inp.byteInputStream()
+            object : InputStream() {
+                override fun read(): Int {
+                    val read = ist.read()
+                    if (read.toChar() == '<') count++
+                    return read
+                }
+            }
+        }
+        val result = staks(inputStreamWrapper()) {
+            tagValue("item").string()
+        }
+        assertEquals("value", result)
+        assertTrue(count < 270, "We encountered $count '<' characters. Expected '<' characters to be limited to 270.")
+
+        count = 0
+        val result2 = staks(inputStreamWrapper()) {
+            collectText("item").first()
+        }
+        assertEquals("value", result2)
+        assertTrue(count < 270, "We encountered $count '<' characters. Expected '<' characters to be limited to 270.")
     }
 }

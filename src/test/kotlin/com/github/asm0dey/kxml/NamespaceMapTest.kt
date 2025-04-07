@@ -74,37 +74,18 @@ class NamespaceMapTest {
         val ns1Uri = "http://example.com/ns${Random.nextInt(1000)}"
         val ns2Uri = "http://example.com/ns${Random.nextInt(1000)}"
 
-        println("[DEBUG_LOG] ns1Uri: $ns1Uri")
-        println("[DEBUG_LOG] ns2Uri: $ns2Uri")
-
         @Language("XML") val xml = """
             <root xmlns:ns1="$ns1Uri" xmlns:ns2="$ns2Uri">
                 <element ns1:attr="value1" ns2:attr="value2" attr="value3"/>
             </root>
         """.trimIndent()
 
-        println("[DEBUG_LOG] XML: $xml")
-
-        // First, let's debug what attributes and namespaces are being parsed
-        val flow = staks(xml.byteInputStream(), true)
-        flow.collect { event ->
-            if (event is XmlEvent.StartElement && event.name == "element") {
-                println("[DEBUG_LOG] Element: ${event.name}")
-                println("[DEBUG_LOG] Attributes: ${event.attributes}")
-                println("[DEBUG_LOG] Attribute Namespaces: ${event.attributeNamespaces}")
-                println("[DEBUG_LOG] Namespaces: ${event.namespaces}")
-            }
-        }
-
         // Define namespaces in a map
         val namespaces = mapOf("myns1" to ns1Uri, "myns2" to ns2Uri)
 
         val value1 = staks(xml, namespaces) {
-            println("[DEBUG_LOG] Looking for attribute with namespace: ${namespaces["myns1"]}")
-
             // Use the namespace in an attribute query
             val result = attribute("element", "attr", attributeNamespaceURI = namespaces["myns1"])
-            println("[DEBUG_LOG] Result: $result")
             result.string()
         }
 

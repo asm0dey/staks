@@ -1,40 +1,41 @@
 package com.github.asm0dey.kxml
 
 import kotlinx.coroutines.flow.*
+import kotlin.properties.Delegates
 
 /**
  * Context class for staks operations, providing the core DSL functionality for XML parsing.
- * 
+ *
  * The StaksContext is the heart of the staks library, providing a rich set of methods for
  * extracting and transforming XML data. It serves as the receiver for the lambda passed to
  * the [staks] functions, giving you access to the DSL within that scope.
- * 
+ *
  * The StaksContext provides several categories of functionality:
- * 
+ *
  * 1. **Value Extraction**: Methods like [tagValue], [attribute], and [text] for getting
  *    values from elements and attributes
- * 
+ *
  * 2. **Collection Methods**: Methods like [list] and [flow] for processing multiple elements
- * 
+ *
  * 3. **Root Element Access**: Methods like [rootName], [rootAttribute], and [rootText] for
  *    accessing data from the root element
- * 
+ *
  * 4. **Namespace Handling**: Methods like [resolveNamespace] and [getNamespaces] for working
  *    with XML namespaces
- * 
+ *
  * 5. **Low-Level Methods**: Methods like [collectText], [collectAttribute], and [collectElements]
  *    for more direct control over the parsing process
- * 
+ *
  * Example usage:
  * ```kotlin
  * val result = staks(xmlString) {
  *     // Extract values from elements
  *     val title = tagValue("title").string()
  *     val year = tagValue("year").int()
- *     
+ *
  *     // Extract values from attributes
  *     val id = attribute("book", "id").int()
- *     
+ *
  *     // Process lists of elements
  *     val authors = list("author") {
  *         // Inside this block, we're in the context of a single author element
@@ -42,7 +43,7 @@ import kotlinx.coroutines.flow.*
  *         val bio = tagValue("bio").nullable().string()
  *         Author(name, bio)
  *     }
- *     
+ *
  *     Book(id, title, year, authors)
  * }
  * ```
@@ -67,7 +68,7 @@ public class StaksContext(
      * Registers a handler in the correct place in the hierarchy.
      * If there is a current compound handler, the handler is added to it.
      * Otherwise, the handler is added to the top-level handlers list.
-     * 
+     *
      * @param handler The handler to register
      */
     private fun registerHandler(handler: Handler<*>) {
@@ -78,60 +79,6 @@ public class StaksContext(
         }
     }
 
-    /**
-     * Processes an event through a handler and its child handlers.
-     * 
-     * @param event The XML event to process
-     * @param handler The handler to process the event through
-     * @return true if the handler or any of its child handlers is filled, false otherwise
-     */
-    private fun Handler<*>.processEvent(event: XmlEvent): Boolean {
-        // Only process the event if the handler supports it
-        if (!supports(event)) {
-            return false
-        }
-
-        // Process the event through the handler
-        val filled = process(event)
-        if (filled) {
-            return true
-        }
-
-        // If this is a compound handler, process the event through its child handlers
-        if (this is CompoundHandler<*>) {
-            return getChildHandlers().any { childHandler ->
-                childHandler.processEvent(event)
-            }
-        }
-
-        return false
-    }
-
-    /**
-     * Processes all events through the registered handlers.
-     * This method is called by the staks functions to implement the flow mechanism
-     * where events find their handlers and fill data.
-     * 
-     * @return true if at least one handler is filled, false otherwise
-     */
-    public suspend fun processEvents(): Boolean {
-        var anyHandlerFilled = false
-
-        flow.collect { event ->
-            // Process the event through all top-level handlers
-            // Stop processing if any handler is filled
-            val handlerFilled = handlers.any { handler ->
-                handler.processEvent(event)
-            }
-
-            if (handlerFilled) {
-                anyHandlerFilled = true
-                return@collect
-            }
-        }
-
-        return anyHandlerFilled
-    }
     /**
      * Function to check if an element matches the given criteria.
      */
@@ -174,7 +121,7 @@ public class StaksContext(
 
     /**
      * Helper function to parse a name with an optional namespace prefix.
-     * 
+     *
      * @param name The name to parse, which may include a namespace prefix (e.g., "ns:element")
      * @return A Pair containing the prefix (or null if none) and the local name
      */
@@ -192,66 +139,77 @@ public class StaksContext(
      *
      * @param elementName The name of the element to collect text from. Can include a namespace prefix (e.g., "ns:element").
      * @param namespaceURI The namespace URI to match, or null to match any namespace.
+     * @param handler that should be filled, if any (created by DSL)
      * @return A Flow of text content for the specified element
      */
-    public fun collectText(elementName: String, namespaceURI: String? = null): Flow<String> = flow {
-        var insideElement = false
-        var currentText = ""
+    public fun collectText(
+        elementName: String,
+        namespaceURI: String? = null,
+        handler: Handler<*>? = null
+    ): Flow<String> {
+        return flow {
+            var insideElement = false
+            var currentText = ""
 
-        // Parse the element name to extract prefix and local name
-        val (prefix, localName) = parseName(elementName)
+            // Parse the element name to extract prefix and local name
+            val (prefix, localName) = parseName(elementName)
+            flow
+                .takeWhile { handler == null || !handler.isFilled() }
+                .collect { event ->
+                    when (event) {
+                        is XmlEvent.StartElement -> {
+                            val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
+                                prefix,
+                                event,
+                                localName,
+                                namespaceURI,
+                                event.name == elementName
+                            )
 
-        flow.collect { event ->
-            when (event) {
-                is XmlEvent.StartElement -> {
-                    val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
-                        prefix,
-                        event,
-                        localName,
-                        namespaceURI,
-                        event.name == elementName
-                    )
+                            if (elementNameMatches && elementNamespaceMatches) {
+                                insideElement = true
+                                currentText = ""
+                            }
+                        }
 
-                    if (elementNameMatches && elementNamespaceMatches) {
-                        insideElement = true
-                        currentText = ""
+                        is XmlEvent.EndElement -> {
+                            val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
+                                prefix,
+                                event,
+                                localName,
+                                namespaceURI,
+                                event.name == elementName
+                            )
+
+                            if (elementNameMatches && elementNamespaceMatches && insideElement) {
+                                insideElement = false
+                                emit(currentText)
+                            }
+                        }
+
+                        is XmlEvent.Text -> {
+                            if (insideElement) {
+                                currentText += event.text
+                            }
+                        }
                     }
                 }
-
-                is XmlEvent.EndElement -> {
-                    val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
-                        prefix,
-                        event,
-                        localName,
-                        namespaceURI,
-                        event.name == elementName
-                    )
-
-                    if (elementNameMatches && elementNamespaceMatches && insideElement) {
-                        insideElement = false
-                        emit(currentText)
-                    }
-                }
-
-                is XmlEvent.Text -> {
-                    if (insideElement) {
-                        currentText += event.text
-                    }
-                }
-            }
         }
     }
 
     /**
      * Function to collect the text content of the current element from a Flow of XML events.
      *
+     * @param handler that should be filled (created by DSL)
      * @return A Flow with a single string containing the text content of the current element
      */
-    public fun collectCurrentText(): Flow<String> = flow {
+    public fun collectCurrentText(handler: Handler<*>? = null): Flow<String> = flow {
         var textContent = ""
         var depth = 0
 
-        flow.collect { event ->
+        flow
+            .takeWhile { handler == null || !handler.isFilled() }
+            .collect { event ->
             when (event) {
                 is XmlEvent.StartElement -> {
                     if (depth > 0) {
@@ -279,28 +237,28 @@ public class StaksContext(
 
     /**
      * Gets the text content of a specific tag.
-     * 
+     *
      * This is one of the most commonly used methods in the DSL. It extracts the text content
      * from a specific element and returns a [TagValueResult] that provides type conversion methods.
-     * 
+     *
      * Example:
      * ```kotlin
      * // Get a string value
      * val title = tagValue("title").string()
-     * 
+     *
      * // Get an integer value
      * val year = tagValue("year").int()
-     * 
+     *
      * // Get a double value
      * val price = tagValue("price").double()
-     * 
+     *
      * // Get a boolean value
      * val available = tagValue("available").boolean()
-     * 
+     *
      * // Use the unary plus operator as a shorthand for .value()
      * val description = +tagValue("description")
      * ```
-     * 
+     *
      * For optional elements, use the [nullable] extension:
      * ```kotlin
      * val optionalValue = tagValue("optional").nullable().string()
@@ -313,9 +271,10 @@ public class StaksContext(
      * @see nullable
      */
     public suspend fun tagValue(tagName: String): TagValueResult {
-        val handler = SimpleHandler(
+        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
+        handler = SimpleHandler(
             extractor = {
-                val value = collectText(tagName).firstOrNull()
+                val value = collectText(tagName, handler = handler).firstOrNull()
                 TagValueResult(value)
             },
             tagName = tagName
@@ -335,9 +294,10 @@ public class StaksContext(
      * @return A TagValueResult that can be used to get the value with type conversion
      */
     public suspend fun tagText(tagName: String, namespaceURI: String?): TagValueResult {
-        val handler = SimpleHandler(
+        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
+        handler = SimpleHandler(
             extractor = {
-                val value = collectText(tagName, namespaceURI).firstOrNull()
+                val value = collectText(tagName, namespaceURI, handler = handler).firstOrNull()
                 TagValueResult(value)
             },
             tagName = tagName,
@@ -352,11 +312,11 @@ public class StaksContext(
 
     /**
      * Gets the text content of the current element.
-     * 
+     *
      * This method is particularly useful when working with nested elements or within
      * a [list] or [flow] block, where you want to get the text content of the current
      * element being processed. It returns a [TagValueResult] that provides type conversion methods.
-     * 
+     *
      * Example:
      * ```kotlin
      * // Process a list of elements and get their text content
@@ -365,22 +325,22 @@ public class StaksContext(
      *         // Inside this block, we're in the context of a single item element
      *         // Get the text content of the current item element
      *         val value = text().string()
-     *         
+     *
      *         // Get an attribute from the current element
      *         val id = attribute("id").int()
-     *         
+     *
      *         Item(id, value)
      *     }
      * }
      * ```
-     * 
+     *
      * You can also use type conversion methods directly:
      * ```kotlin
      * val count = text().int()
      * val price = text().double()
      * val enabled = text().boolean()
      * ```
-     * 
+     *
      * For optional elements, use the [nullable] extension:
      * ```kotlin
      * val optionalText = text().nullable().string()
@@ -394,12 +354,13 @@ public class StaksContext(
      * @see flow
      */
     public suspend fun text(): TagValueResult {
-        val handler = SimpleHandler(
+        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
+        handler = SimpleHandler(
             extractor = {
-                val value = collectCurrentText().firstOrNull()
+                val value = collectCurrentText(handler).firstOrNull()
                 TagValueResult(value)
             }
-            // No tagName or attributeName needed for current element
+            // No tagName or attributeName needed for the current element
         )
         registerHandler(handler)
 
@@ -415,13 +376,15 @@ public class StaksContext(
      * @param attributeName The name of the attribute to collect. Can include a namespace prefix (e.g., "ns:attribute").
      * @param elementNamespaceURI The namespace URI of the element to match, or null to match any namespace.
      * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
+     * @param handler collect should fill at the end (created by DSL)
      * @return A Flow of attribute values for the specified element and attribute
      */
     public fun collectAttribute(
         elementName: String,
         attributeName: String,
         elementNamespaceURI: String? = null,
-        attributeNamespaceURI: String? = null
+        attributeNamespaceURI: String? = null,
+        handler: Handler<*>? = null
     ): Flow<String> = flow {
         // Parse the element name to extract prefix and local name
         val (elementPrefix, elementLocalName) = parseName(elementName)
@@ -429,7 +392,9 @@ public class StaksContext(
         // Parse the attribute name to extract prefix and local name
         val (attributePrefix, attributeLocalName) = parseName(attributeName)
 
-        flow.collect { event ->
+        flow
+            .takeWhile { handler == null || !handler.isFilled() }
+            .collect { event ->
             if (event is XmlEvent.StartElement) {
                 val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
                     elementPrefix,
@@ -499,7 +464,8 @@ public class StaksContext(
         // Parse the attribute name to extract prefix and local name
         val (attributePrefix, attributeLocalName) = parseName(attributeName)
 
-        flow.collect { event ->
+        flow
+            .collect { event ->
             if (event is XmlEvent.StartElement) {
                 if (attributeNamespaceURI != null) {
                     // If attribute namespace URI is specified, find the attribute with the matching namespace URI and local name
@@ -545,43 +511,43 @@ public class StaksContext(
 
     /**
      * Gets the value of an attribute from a specific element.
-     * 
+     *
      * This method extracts an attribute value from a specific element and returns an
      * [AttributeResult] that provides type conversion methods. It's commonly used to
      * get metadata or identifiers from XML elements.
-     * 
+     *
      * Example:
      * ```kotlin
      * // Get a string attribute value
      * val id = attribute("book", "id").string()
-     * 
+     *
      * // Get an integer attribute value
      * val count = attribute("library", "count").int()
-     * 
+     *
      * // Get a double attribute value
      * val price = attribute("product", "price").double()
-     * 
+     *
      * // Get a boolean attribute value
      * val available = attribute("product", "available").boolean()
-     * 
+     *
      * // Use the unary plus operator as a shorthand for .value()
      * val category = +attribute("book", "category")
      * ```
-     * 
+     *
      * For optional attributes, use the [nullable] extension:
      * ```kotlin
      * val optionalAttr = attribute("element", "optional-attr").nullable().string()
      * // optionalAttr will be null if the attribute doesn't exist
      * ```
-     * 
+     *
      * For attributes with namespaces:
      * ```kotlin
      * // Using namespace URI
      * val value = attribute("element", "attr", "http://example.com/ns", null)
-     * 
+     *
      * // Using namespace prefix in the element name
      * val value = attribute("ns:element", "attr")
-     * 
+     *
      * // Using namespace prefix in the attribute name
      * val value = attribute("element", "ns:attr")
      * ```
@@ -595,14 +561,22 @@ public class StaksContext(
      * @see nullable
      */
     public suspend fun attribute(
-        tagName: String, 
-        attributeName: String, 
+        tagName: String,
+        attributeName: String,
         tagNamespaceURI: String? = null,
         attributeNamespaceURI: String? = null
     ): AttributeResult {
-        val handler = SimpleHandler(
+        var handler: SimpleHandler<AttributeResult> by Delegates.notNull()
+        handler = SimpleHandler(
             extractor = {
-                val value = collectAttribute(tagName, attributeName, tagNamespaceURI, attributeNamespaceURI).firstOrNull()
+                val value =
+                    collectAttribute(
+                        tagName,
+                        attributeName,
+                        tagNamespaceURI,
+                        attributeNamespaceURI,
+                        handler
+                    ).firstOrNull()
                 AttributeResult(value)
             },
             tagName = tagName,
@@ -689,17 +663,17 @@ public class StaksContext(
 
     /**
      * Collects and transforms a list of elements with the same tag name.
-     * 
+     *
      * This is one of the most powerful methods in the DSL, allowing you to process multiple
      * elements with the same tag name and transform them into a list of domain objects.
      * The provided [block] is executed for each matching element, with the [StaksContext]
      * scoped to that element.
-     * 
+     *
      * Example:
      * ```kotlin
      * // Define a data class to hold our parsed data
      * data class Book(val id: Int, val title: String, val year: Int)
-     * 
+     *
      * // Parse a list of books
      * val books = staks(xmlString) {
      *     list("book") {
@@ -707,35 +681,35 @@ public class StaksContext(
      *         val id = attribute("id").int()
      *         val title = tagValue("title").string()
      *         val year = tagValue("year").int()
-     *         
+     *
      *         // Return a Book object for each book element
      *         Book(id, title, year)
      *     }
      * }
      * // books is now a List<Book>
      * ```
-     * 
+     *
      * You can also handle nested structures:
      * ```kotlin
      * data class Author(val name: String, val email: String?)
      * data class Book(val title: String, val authors: List<Author>)
-     * 
+     *
      * val books = staks(xmlString) {
      *     list("book") {
      *         val title = tagValue("title").string()
-     *         
+     *
      *         // Process nested authors
      *         val authors = list("author") {
      *             val name = tagValue("name").string()
      *             val email = tagValue("email").nullable().string()
      *             Author(name, email)
      *         }
-     *         
+     *
      *         Book(title, authors)
      *     }
      * }
      * ```
-     * 
+     *
      * For large XML documents, consider using [flow] instead of [list] to process
      * elements one by one without collecting them all into memory.
      *
@@ -747,7 +721,7 @@ public class StaksContext(
      * @see flow
      */
     public suspend fun <T> list(
-        tagName: String, 
+        tagName: String,
         namespaceURI: String? = null,
         block: suspend StaksContext.() -> T
     ): List<T> {
@@ -771,24 +745,24 @@ public class StaksContext(
 
     /**
      * Collects and transforms elements into a Flow for streaming processing.
-     * 
+     *
      * This method is similar to [list], but instead of collecting all elements into a list,
      * it returns a [Flow] that emits transformed elements as they are processed. This is
      * particularly useful for large XML documents, as it allows you to process elements
      * one by one without loading them all into memory.
-     * 
+     *
      * Example:
      * ```kotlin
      * // Define a data class to hold our parsed data
      * data class Book(val id: Int, val title: String)
-     * 
+     *
      * // Process books as a flow
      * staks(largeXmlFile) {
      *     flow("book") {
      *         // Inside this block, we're in the context of a single book element
      *         val id = attribute("id").int()
      *         val title = tagValue("title").string()
-     *         
+     *
      *         // Return a Book object for each book element
      *         Book(id, title)
      *     }.collect { book ->
@@ -798,7 +772,7 @@ public class StaksContext(
      *     }
      * }
      * ```
-     * 
+     *
      * You can also transform the flow using standard Flow operators:
      * ```kotlin
      * staks(xmlFile) {
@@ -811,7 +785,7 @@ public class StaksContext(
      *     .collect { println(it) }
      * }
      * ```
-     * 
+     *
      * Use this method instead of [list] when:
      * - Processing very large XML documents
      * - You want to start processing elements before the entire document is parsed
@@ -827,7 +801,7 @@ public class StaksContext(
      * @see kotlinx.coroutines.flow.Flow
      */
     public fun <T> flow(
-        tagName: String, 
+        tagName: String,
         namespaceURI: String? = null,
         block: suspend StaksContext.() -> T
     ): Flow<T> {
@@ -888,6 +862,7 @@ public class StaksContext(
                         depth++
                     }
                 }
+
                 is XmlEvent.EndElement -> {
                     if (insideRoot && depth == 0) {
                         // End of the root element
@@ -896,6 +871,7 @@ public class StaksContext(
                         depth--
                     }
                 }
+
                 is XmlEvent.Text -> {
                     if (insideRoot && depth == 0) {
                         rootTextContent.append(event.text)
