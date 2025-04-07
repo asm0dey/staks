@@ -36,10 +36,10 @@ class StaksFlowParserTest {
 </root>""".byteInputStream()
 
         val lst = staks(inp) {
-            this.collectElements("el") {
-                val a = this.collectText("a").first()
-                val b = this.collectText("b").first()
-                val c = this.collectText("c").first()
+            collectElements("el") {
+                val a = collectText("a").first()
+                val b = collectText("b").first()
+                val c = collectText("c").first()
                 Triple(a, b, c)
             }.toList()
         }
@@ -55,7 +55,7 @@ class StaksFlowParserTest {
         val inp = "<root><item>value</item></root>".byteInputStream()
 
         val value = staks(inp) {
-            this.collectText("item").first()
+            collectText("item").first()
         }
 
         assertEquals("value", value)
@@ -66,7 +66,7 @@ class StaksFlowParserTest {
         val inp = "<root><item id=\"123\">value</item></root>".byteInputStream()
 
         val id = staks(inp) {
-            this.collectAttribute("item", "id").first()
+            collectAttribute("item", "id").first()
         }
 
         assertEquals("123", id)
@@ -77,11 +77,11 @@ class StaksFlowParserTest {
         val xml = "<root><item>value</item></root>"
 
         val existingTag = staks(xml) {
-            this.collectText("item").first()
+            collectText("item").first()
         }
 
         val nonExistingTag = staks(xml) {
-            this.collectText("non-existing").firstOrNull()
+            collectText("non-existing").firstOrNull()
         }
 
         val result = Pair(existingTag, nonExistingTag)
@@ -95,7 +95,7 @@ class StaksFlowParserTest {
         val inp = "<root><number>42</number></root>".byteInputStream()
 
         val number = staks(inp) {
-            this.collectText("number").first().toInt()
+            collectText("number").first().toInt()
         }
 
         assertEquals(42, number)
@@ -126,11 +126,11 @@ class StaksFlowParserTest {
         data class Book(val id: Int, val title: String, val author: String, val year: Int)
 
         val books = staks(inp) {
-            this.collectElements("book") {
-                val id = this.collectAttribute("book", "id").first().toInt()
-                val title = this.collectText("title").first()
-                val author = this.collectText("author").first()
-                val year = this.collectText("year").first().toInt()
+            collectElements("book") {
+                val id = collectAttribute("book", "id").first().toInt()
+                val title = collectText("title").first()
+                val author = collectText("author").first()
+                val year = collectText("year").first().toInt()
                 Book(id, title, author, year)
             }.toList()
         }
@@ -146,7 +146,7 @@ class StaksFlowParserTest {
         val inp = "<root><a href=\"link\"/></root>".byteInputStream()
 
         val href = staks(inp) {
-            this.collectAttribute("a", "href").first()
+            collectAttribute("a", "href").first()
         }
 
         assertEquals("link", href)
@@ -157,7 +157,7 @@ class StaksFlowParserTest {
         val xml = "<root><item>value</item></root>"
 
         val value = staks(xml) {
-            this.collectText("item").first()
+            collectText("item").first()
         }
 
         assertEquals("value", value)
@@ -171,7 +171,7 @@ class StaksFlowParserTest {
         tempFile.writeText("<root><item>file-value</item></root>")
 
         val value = staks(tempFile) {
-            this.collectText("item").first()
+            collectText("item").first()
         }
 
         assertEquals("file-value", value)

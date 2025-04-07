@@ -1,7 +1,6 @@
 # 📚 Staks: Elegant XML Parsing for Kotlin
 
 [![JVM](https://img.shields.io/badge/JVM-23-blue.svg)](https://www.oracle.com/java/technologies/javase/jdk23-archive-downloads.html)
-[![JVM Compatibility](https://img.shields.io/badge/JVM%20Compatibility-11+-green.svg)](https://www.oracle.com/java/technologies/javase/jdk11-archive-downloads.html)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.10-blue.svg)](https://kotlinlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 [![Maven Central](https://img.shields.io/maven-central/v/com.github.asm0dey/staks.svg)](https://search.maven.org/search?q=g:com.github.asm0dey%20AND%20a:staks)

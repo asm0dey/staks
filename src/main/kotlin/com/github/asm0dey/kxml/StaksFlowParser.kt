@@ -1,8 +1,8 @@
 package com.github.asm0dey.kxml
 
+import com.github.asm0dey.kxml.XmlEvent.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.codehaus.stax2.XMLInputFactory2
 import java.io.File
 import java.io.InputStream
 import javax.xml.stream.XMLInputFactory
@@ -170,7 +170,7 @@ public sealed interface XmlEvent {
  * @return A Flow of XML events
  */
 public fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<XmlEvent> = flow {
-    val xmlInputFactory = XMLInputFactory2.newFactory() as XMLInputFactory2
+    val xmlInputFactory = XMLInputFactory.newInstance()
     // Configure the factory to coalesce adjacent character data
     xmlInputFactory.setProperty(XMLInputFactory.IS_COALESCING, true)
     // Configure namespace support
@@ -291,19 +291,14 @@ public fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<Xml
  * @return The result of the parsing operation as defined by the block
  */
 public suspend fun <T> staks(
-    input: InputStream,
+    input: InputStream, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true,
+    enableNamespaces: Boolean = true, 
     block: suspend StaksContext.() -> T
 ): T {
     val flow = staks(input, enableNamespaces)
     val context = StaksContext(flow, namespaces, enableNamespaces)
-
-    // Execute the block to set up handlers and process events
-    // The events are processed when methods like tagValue, list, etc. are called
-    val result = context.block()
-
-    return result
+    return context.block()
 }
 
 /**
@@ -352,19 +347,14 @@ public suspend fun <T> staks(
  * @return The result of the parsing operation as defined by the block
  */
 public suspend fun <T> staks(
-    input: String,
+    input: String, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true,
+    enableNamespaces: Boolean = true, 
     block: suspend StaksContext.() -> T
 ): T {
     val flow = staks(input.byteInputStream(), enableNamespaces)
     val context = StaksContext(flow, namespaces, enableNamespaces)
-
-    // Execute the block to set up handlers and process events
-    // The events are processed when methods like tagValue, list, etc. are called
-    val result = context.block()
-
-    return result
+    return context.block()
 }
 
 /**
@@ -416,20 +406,15 @@ public suspend fun <T> staks(
  * @return The result of the parsing operation as defined by the block
  */
 public suspend fun <T> staks(
-    input: File,
+    input: File, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true,
+    enableNamespaces: Boolean = true, 
     block: suspend StaksContext.() -> T
 ): T {
     input.inputStream().buffered().use {
         val flow = staks(input.inputStream().buffered(), enableNamespaces)
         val context = StaksContext(flow, namespaces, enableNamespaces)
-
-        // Execute the block to set up handlers and process events
-        // The events are processed when methods like tagValue, list, etc. are called
-        val result = context.block()
-
-        return result
+        return context.block()
     }
 }
 

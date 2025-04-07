@@ -340,27 +340,4 @@ class StaksFlowExtensionsTest {
         assertEquals(0, items.size)
     }
 
-    @Test
-    fun `test out of order items not in list are handled correctly`() = runBlocking {
-        @Language("XML") val xml = """<root>
-            |    <item>
-            |        <b>1</b>
-            |        <a>value</a>
-            |        <c>c</c>
-            |    </item>
-            |</root>""".trimMargin()
-
-        val result = staks(xml.byteInputStream()) {
-            list("item") {
-                val nValue = tagValue("n").nullable().string()
-                val cValue = tagValue("c").string()
-                val aValue = tagValue("a").string()
-                val bValue = tagValue("b").int()
-                Triple(aValue, bValue, cValue) to nValue
-            }
-        }
-
-        assertEquals(listOf(Triple("value", 1, "c") to null), result)
-    }
-
 }

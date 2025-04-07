@@ -1,7 +1,6 @@
 package com.github.asm0dey.kxml
 
 import kotlinx.coroutines.flow.*
-import kotlin.properties.Delegates
 
 /**
  * Context class for staks operations, providing the core DSL functionality for XML parsing.
@@ -57,28 +56,6 @@ public class StaksContext(
     public val namespaces: Map<String, String> = emptyMap(),
     public val enableNamespaces: Boolean = true
 ) {
-    // List of top-level handlers that will process XML events
-    private val handlers = mutableListOf<Handler<*>>()
-
-    // The current compound handler, if any
-    // This is used to track the current context for handler registration
-    private var currentCompoundHandler: CompoundHandler<*>? = null
-
-    /**
-     * Registers a handler in the correct place in the hierarchy.
-     * If there is a current compound handler, the handler is added to it.
-     * Otherwise, the handler is added to the top-level handlers list.
-     *
-     * @param handler The handler to register
-     */
-    private fun registerHandler(handler: Handler<*>) {
-        if (currentCompoundHandler != null) {
-            currentCompoundHandler!!.addChildHandler(handler)
-        } else {
-            handlers.add(handler)
-        }
-    }
-
     /**
      * Function to check if an element matches the given criteria.
      */
@@ -120,32 +97,15 @@ public class StaksContext(
     }
 
     /**
-     * Helper function to parse a name with an optional namespace prefix.
-     *
-     * @param name The name to parse, which may include a namespace prefix (e.g., "ns:element")
-     * @return A Pair containing the prefix (or null if none) and the local name
-     */
-    private fun parseName(name: String): Pair<String?, String> {
-        return if (name.contains(':')) {
-            val parts = name.split(':', limit = 2)
-            Pair(parts[0], parts[1])
-        } else {
-            Pair(null, name)
-        }
-    }
-
-    /**
      * Function to collect all text content of a specific element from a Flow of XML events.
      *
      * @param elementName The name of the element to collect text from. Can include a namespace prefix (e.g., "ns:element").
      * @param namespaceURI The namespace URI to match, or null to match any namespace.
-     * @param handler that should be filled, if any (created by DSL)
      * @return A Flow of text content for the specified element
      */
     public fun collectText(
         elementName: String,
         namespaceURI: String? = null,
-        handler: Handler<*>? = null
     ): Flow<String> {
         return flow {
             var insideElement = false
@@ -154,7 +114,6 @@ public class StaksContext(
             // Parse the element name to extract prefix and local name
             val (prefix, localName) = parseName(elementName)
             flow
-                .takeWhile { handler == null || !handler.isFilled() }
                 .collect { event ->
                     when (event) {
                         is XmlEvent.StartElement -> {
@@ -200,39 +159,37 @@ public class StaksContext(
     /**
      * Function to collect the text content of the current element from a Flow of XML events.
      *
-     * @param handler that should be filled (created by DSL)
      * @return A Flow with a single string containing the text content of the current element
      */
-    public fun collectCurrentText(handler: Handler<*>? = null): Flow<String> = flow {
+    public fun collectCurrentText(): Flow<String> = flow {
         var textContent = ""
         var depth = 0
 
         flow
-            .takeWhile { handler == null || !handler.isFilled() }
             .collect { event ->
-            when (event) {
-                is XmlEvent.StartElement -> {
-                    if (depth > 0) {
-                        depth++
+                when (event) {
+                    is XmlEvent.StartElement -> {
+                        if (depth > 0) {
+                            depth++
+                        }
                     }
-                }
 
-                is XmlEvent.EndElement -> {
-                    if (depth == 0) {
-                        emit(textContent.trim())
-                        return@collect
-                    } else {
-                        depth--
+                    is XmlEvent.EndElement -> {
+                        if (depth == 0) {
+                            emit(textContent.trim())
+                            return@collect
+                        } else {
+                            depth--
+                        }
                     }
-                }
 
-                is XmlEvent.Text -> {
-                    if (depth == 0) {
-                        textContent += event.text
+                    is XmlEvent.Text -> {
+                        if (depth == 0) {
+                            textContent += event.text
+                        }
                     }
                 }
             }
-        }
     }
 
     /**
@@ -271,19 +228,8 @@ public class StaksContext(
      * @see nullable
      */
     public suspend fun tagValue(tagName: String): TagValueResult {
-        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
-        handler = SimpleHandler(
-            extractor = {
-                val value = collectText(tagName, handler = handler).firstOrNull()
-                TagValueResult(value)
-            },
-            tagName = tagName
-        )
-        registerHandler(handler)
-
-        // Execute the extractor function and set the result in the handler
-        handler.execute(this)
-        return handler.getResult()
+        val value = collectText(tagName).firstOrNull()
+        return TagValueResult(value)
     }
 
     /**
@@ -294,20 +240,8 @@ public class StaksContext(
      * @return A TagValueResult that can be used to get the value with type conversion
      */
     public suspend fun tagText(tagName: String, namespaceURI: String?): TagValueResult {
-        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
-        handler = SimpleHandler(
-            extractor = {
-                val value = collectText(tagName, namespaceURI, handler = handler).firstOrNull()
-                TagValueResult(value)
-            },
-            tagName = tagName,
-            namespaceURI = namespaceURI
-        )
-        registerHandler(handler)
-
-        // Execute the extractor function and set the result in the handler
-        handler.execute(this)
-        return handler.getResult()
+        val value = collectText(tagName, namespaceURI).firstOrNull()
+        return TagValueResult(value)
     }
 
     /**
@@ -354,19 +288,8 @@ public class StaksContext(
      * @see flow
      */
     public suspend fun text(): TagValueResult {
-        var handler: SimpleHandler<TagValueResult> by Delegates.notNull()
-        handler = SimpleHandler(
-            extractor = {
-                val value = collectCurrentText(handler).firstOrNull()
-                TagValueResult(value)
-            }
-            // No tagName or attributeName needed for the current element
-        )
-        registerHandler(handler)
-
-        // Execute the extractor function and set the result in the handler
-        handler.execute(this)
-        return handler.getResult()
+        val value = collectCurrentText().firstOrNull()
+        return TagValueResult(value)
     }
 
     /**
@@ -376,7 +299,6 @@ public class StaksContext(
      * @param attributeName The name of the attribute to collect. Can include a namespace prefix (e.g., "ns:attribute").
      * @param elementNamespaceURI The namespace URI of the element to match, or null to match any namespace.
      * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
-     * @param handler collect should fill at the end (created by DSL)
      * @return A Flow of attribute values for the specified element and attribute
      */
     public fun collectAttribute(
@@ -384,7 +306,6 @@ public class StaksContext(
         attributeName: String,
         elementNamespaceURI: String? = null,
         attributeNamespaceURI: String? = null,
-        handler: Handler<*>? = null
     ): Flow<String> = flow {
         // Parse the element name to extract prefix and local name
         val (elementPrefix, elementLocalName) = parseName(elementName)
@@ -393,22 +314,81 @@ public class StaksContext(
         val (attributePrefix, attributeLocalName) = parseName(attributeName)
 
         flow
-            .takeWhile { handler == null || !handler.isFilled() }
             .collect { event ->
-            if (event is XmlEvent.StartElement) {
-                val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
-                    elementPrefix,
-                    event,
-                    elementLocalName,
-                    elementNamespaceURI,
-                    event.name == elementName
-                )
+                if (event is XmlEvent.StartElement) {
+                    val (elementNameMatches, elementNamespaceMatches) = isElementMatch(
+                        elementPrefix,
+                        event,
+                        elementLocalName,
+                        elementNamespaceURI,
+                        event.name == elementName
+                    )
 
-                if (elementNameMatches && elementNamespaceMatches) {
-                    if (enableNamespaces && attributeNamespaceURI != null) {
-                        // If attribute namespace URI is specified and namespace support is enabled,
-                        // find the attribute with the matching namespace URI and local name
-                        var found = false
+                    if (elementNameMatches && elementNamespaceMatches) {
+                        if (enableNamespaces && attributeNamespaceURI != null) {
+                            // If attribute namespace URI is specified and namespace support is enabled,
+                            // find the attribute with the matching namespace URI and local name
+                            var found = false
+                            for ((attrName, attrValue) in event.attributes) {
+                                // Check if this attribute has the specified namespace URI
+                                if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
+                                    // Extract the local name of this attribute
+                                    val attrLocalName = if (attrName.contains(':')) {
+                                        attrName.split(':', limit = 2)[1]
+                                    } else {
+                                        attrName
+                                    }
+
+                                    // Check if the local name matches
+                                    if (attrLocalName == attributeLocalName) {
+                                        emit(attrValue)
+                                        found = true
+                                        break
+                                    }
+                                }
+                            }
+
+                            // If no matching attribute was found and the attribute name includes a prefix,
+                            // try looking up the attribute by its full name
+                            if (!found && attributePrefix != null) {
+                                val fullName = "$attributePrefix:$attributeLocalName"
+                                val value = event.attributes[fullName]
+                                if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
+                                    emit(value)
+                                }
+                            }
+                        } else {
+                            // If no attribute namespace URI is specified or namespace support is disabled,
+                            // look up the attribute by name
+                            val value = event.attributes[attributeName]
+                            if (value != null) {
+                                emit(value)
+                            }
+                        }
+                    }
+                }
+            }
+    }
+
+    /**
+     * Function to collect an attribute of the current element from a Flow of XML events.
+     *
+     * @param attributeName The name of the attribute to collect. Can include a namespace prefix (e.g., "ns:attribute").
+     * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
+     * @return A Flow with a single string containing the attribute value of the current element
+     */
+    public fun collectCurrentAttribute(
+        attributeName: String,
+        attributeNamespaceURI: String? = null
+    ): Flow<String> = flow {
+        // Parse the attribute name to extract prefix and local name
+        val (attributePrefix, attributeLocalName) = parseName(attributeName)
+
+        flow
+            .collect { event ->
+                if (event is XmlEvent.StartElement) {
+                    if (attributeNamespaceURI != null) {
+                        // If attribute namespace URI is specified, find the attribute with the matching namespace URI and local name
                         for ((attrName, attrValue) in event.attributes) {
                             // Check if this attribute has the specified namespace URI
                             if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
@@ -422,91 +402,31 @@ public class StaksContext(
                                 // Check if the local name matches
                                 if (attrLocalName == attributeLocalName) {
                                     emit(attrValue)
-                                    found = true
-                                    break
+                                    return@collect
                                 }
                             }
                         }
 
                         // If no matching attribute was found and the attribute name includes a prefix,
                         // try looking up the attribute by its full name
-                        if (!found && attributePrefix != null) {
+                        if (attributePrefix != null) {
                             val fullName = "$attributePrefix:$attributeLocalName"
                             val value = event.attributes[fullName]
                             if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
                                 emit(value)
-                            }
-                        }
-                    } else {
-                        // If no attribute namespace URI is specified or namespace support is disabled,
-                        // look up the attribute by name
-                        val value = event.attributes[attributeName]
-                        if (value != null) {
-                            emit(value)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Function to collect an attribute of the current element from a Flow of XML events.
-     *
-     * @param attributeName The name of the attribute to collect. Can include a namespace prefix (e.g., "ns:attribute").
-     * @param attributeNamespaceURI The namespace URI of the attribute to match, or null to match any namespace.
-     * @return A Flow with a single string containing the attribute value of the current element
-     */
-    private fun collectCurrentAttribute(
-        attributeName: String,
-        attributeNamespaceURI: String? = null
-    ): Flow<String> = flow {
-        // Parse the attribute name to extract prefix and local name
-        val (attributePrefix, attributeLocalName) = parseName(attributeName)
-
-        flow
-            .collect { event ->
-            if (event is XmlEvent.StartElement) {
-                if (attributeNamespaceURI != null) {
-                    // If attribute namespace URI is specified, find the attribute with the matching namespace URI and local name
-                    for ((attrName, attrValue) in event.attributes) {
-                        // Check if this attribute has the specified namespace URI
-                        if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
-                            // Extract the local name of this attribute
-                            val attrLocalName = if (attrName.contains(':')) {
-                                attrName.split(':', limit = 2)[1]
-                            } else {
-                                attrName
-                            }
-
-                            // Check if the local name matches
-                            if (attrLocalName == attributeLocalName) {
-                                emit(attrValue)
                                 return@collect
                             }
                         }
-                    }
-
-                    // If no matching attribute was found and the attribute name includes a prefix,
-                    // try looking up the attribute by its full name
-                    if (attributePrefix != null) {
-                        val fullName = "$attributePrefix:$attributeLocalName"
-                        val value = event.attributes[fullName]
-                        if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
+                    } else {
+                        // If no attribute namespace URI is specified, just look up the attribute by name
+                        val value = event.attributes[attributeName]
+                        if (value != null) {
                             emit(value)
                             return@collect
                         }
                     }
-                } else {
-                    // If no attribute namespace URI is specified, just look up the attribute by name
-                    val value = event.attributes[attributeName]
-                    if (value != null) {
-                        emit(value)
-                        return@collect
-                    }
                 }
             }
-        }
     }
 
     /**
@@ -566,28 +486,8 @@ public class StaksContext(
         tagNamespaceURI: String? = null,
         attributeNamespaceURI: String? = null
     ): AttributeResult {
-        var handler: SimpleHandler<AttributeResult> by Delegates.notNull()
-        handler = SimpleHandler(
-            extractor = {
-                val value =
-                    collectAttribute(
-                        tagName,
-                        attributeName,
-                        tagNamespaceURI,
-                        attributeNamespaceURI,
-                        handler
-                    ).firstOrNull()
-                AttributeResult(value)
-            },
-            tagName = tagName,
-            attributeName = attributeName,
-            namespaceURI = tagNamespaceURI
-        )
-        registerHandler(handler)
-
-        // Execute the extractor function and set the result in the handler
-        handler.execute(this)
-        return handler.getResult()
+        val value = collectAttribute(tagName, attributeName, tagNamespaceURI, attributeNamespaceURI).firstOrNull()
+        return AttributeResult(value)
     }
 
     /**
@@ -601,19 +501,8 @@ public class StaksContext(
         attributeName: String,
         attributeNamespaceURI: String? = null
     ): AttributeResult {
-        val handler = SimpleHandler(
-            extractor = {
-                val value = collectCurrentAttribute(attributeName, attributeNamespaceURI).firstOrNull()
-                AttributeResult(value)
-            },
-            attributeName = attributeName,
-            namespaceURI = attributeNamespaceURI
-        )
-        registerHandler(handler)
-
-        // Execute the extractor function and set the result in the handler
-        handler.execute(this)
-        return handler.getResult()
+        val value = collectCurrentAttribute(attributeName, attributeNamespaceURI).firstOrNull()
+        return AttributeResult(value)
     }
 
     /**
@@ -629,36 +518,72 @@ public class StaksContext(
         namespaceURI: String? = null,
         transform: suspend StaksContext.() -> T
     ): Flow<T> = flow {
-        val handler = CompoundHandler(elementName, namespaceURI, transform)
-        handlers.add(handler)
+        var insideElement = false
+        var depth = 0
+        var events = mutableListOf<XmlEvent>()
 
         // Parse the element name to extract prefix and local name
         val (prefix, localName) = parseName(elementName)
 
         flow.collect { event ->
-            // Process the event with the handler
-            handler.process(event)
+            when (event) {
+                is XmlEvent.StartElement -> {
+                    val (nameMatches, namespaceMatches) = isElementMatch(
+                        prefix,
+                        event,
+                        localName,
+                        namespaceURI,
+                        event.name == elementName
+                    )
 
-            // If the handler has collected events for a complete element, process them
-            if (event is XmlEvent.EndElement) {
-                val (nameMatches, namespaceMatches) = isElementMatch(
-                    prefix,
-                    event,
-                    localName,
-                    namespaceURI,
-                    event.name == elementName
-                )
+                    if (nameMatches && namespaceMatches && depth == 0) {
+                        insideElement = true
+                        events = mutableListOf(event)
+                    } else if (insideElement) {
+                        depth++
+                        events.add(event)
+                    }
+                }
 
-                if (nameMatches && namespaceMatches) {
-                    // Process the collected events and emit the result
-                    handler.processCollectedEvents(this@StaksContext)
-                    val results = handler.getResult()
-                    if (results.isNotEmpty()) {
-                        emit(results.last())
+                is XmlEvent.EndElement -> {
+                    if (insideElement) {
+                        events.add(event)
+
+                        val (nameMatches, namespaceMatches) = isElementMatch(
+                            prefix,
+                            event,
+                            localName,
+                            namespaceURI,
+                            event.name == elementName
+                        )
+
+                        if (nameMatches && namespaceMatches && depth == 0) {
+                            insideElement = false
+                            // Create a flow from the collected events
+                            val eventsFlow = kotlinx.coroutines.flow.flowOf(*events.toTypedArray())
+                            val elementContext = StaksContext(eventsFlow, namespaces, enableNamespaces)
+                            val result = elementContext.transform()
+                            emit(result)
+                        } else {
+                            depth--
+                        }
+                    }
+                }
+
+                is XmlEvent.Text -> {
+                    if (insideElement) {
+                        events.add(event)
                     }
                 }
             }
         }
+    }
+
+    private fun parseName(elementName: String) = if (elementName.contains(':')) {
+        val parts = elementName.split(':', limit = 2)
+        Pair(parts[0], parts[1])
+    } else {
+        Pair(null, elementName)
     }
 
     /**
