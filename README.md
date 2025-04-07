@@ -52,7 +52,7 @@ A lightweight, idiomatic Kotlin library for XML parsing with a fluent DSL. Built
 - **Nullable handling** for optional XML elements
 - **Flow-based API** for asynchronous and streaming processing
 - **Minimal dependencies** (only Kotlin stdlib, Coroutines, and StAX)
-- **Extensible design** for custom handlers and processors
+- **Extensible design** for custom processors
 
 ## 📥 Installation
 
@@ -64,7 +64,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.github.asm0dey:staks:1.0.0")
+    implementation("com.github.asm0dey:staks:1.1.0")
 }
 ```
 
@@ -74,7 +74,7 @@ dependencies {
 <dependency>
     <groupId>com.github.asm0dey</groupId>
     <artifactId>staks</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -614,6 +614,21 @@ val result = staks(largeXmlFile) {
 }
 ```
 
+#### Limit Cache Size
+
+When processing large XML documents, you can limit the size of the internal event cache to reduce memory usage:
+
+```kotlin
+val result = staks(largeXmlFile, maxCacheSize = 100) {
+    // Process the XML with a limited cache size
+    list("item") {
+        // ...
+    }
+}
+```
+
+This is particularly useful when you're processing a large XML document but only need to access a small portion of it. The `maxCacheSize` parameter limits the number of XML events that are cached in memory, which can significantly reduce memory usage for large documents.
+
 #### Reuse Parsing Logic
 
 For repeated parsing tasks, define reusable extension functions:
@@ -663,7 +678,7 @@ val result = staks(xml, namespaces) {
 
 ## 🔧 Extending the Library
 
-The library is designed to be extensible. You can create your own handlers and processors on top of the existing primitives.
+The library is designed to be extensible. You can create your own processors on top of the existing primitives.
 
 ### Creating Custom Value Processors
 
@@ -729,9 +744,9 @@ val rssItems = staks(rssXml) {
 ### Core Functions
 
 - `staks(input: InputStream): Flow<XmlEvent>` - Creates a Flow of XML events from an input stream
-- `staks(input: InputStream, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with input stream
-- `staks(input: String, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with string input
-- `staks(input: File, namespaces: Map<String, String>, enableNamespaces: Boolean, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with file input
+- `staks(input: InputStream, namespaces: Map<String, String>, enableNamespaces: Boolean, maxCacheSize: Int, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with input stream
+- `staks(input: String, namespaces: Map<String, String>, enableNamespaces: Boolean, maxCacheSize: Int, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with string input
+- `staks(input: File, namespaces: Map<String, String>, enableNamespaces: Boolean, maxCacheSize: Int, block: suspend StaksContext.() -> T): T` - Main entry point for the DSL with file input
 
 ### StaksContext Methods
 

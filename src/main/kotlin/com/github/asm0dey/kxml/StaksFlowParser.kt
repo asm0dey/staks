@@ -287,17 +287,19 @@ public fun staks(input: InputStream, enableNamespaces: Boolean = true): Flow<Xml
  * @param input The XML input stream to parse
  * @param namespaces The namespaces to use for resolving prefixes (default: empty map)
  * @param enableNamespaces Whether to enable namespace support (default: true)
+ * @param maxCacheSize The maximum number of XML events to cache for rewinding (default: Int.MAX_VALUE)
  * @param block The suspend block that defines how to parse the XML using the StaksContext
  * @return The result of the parsing operation as defined by the block
  */
 public suspend fun <T> staks(
     input: InputStream, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true, 
+    enableNamespaces: Boolean = true,
+    maxCacheSize: Int = Int.MAX_VALUE,
     block: suspend StaksContext.() -> T
 ): T {
     val flow = staks(input, enableNamespaces)
-    val context = StaksContext(flow, namespaces, enableNamespaces)
+    val context = StaksContext(flow, namespaces, enableNamespaces, maxCacheSize)
     return context.block()
 }
 
@@ -305,6 +307,9 @@ public suspend fun <T> staks(
  * The main entry point for the Flow-based XML parsing DSL using a string input.
  * 
  * This function provides a convenient way to parse XML directly from a string.
+ * It works the same way as the [staks] function that takes an [InputStream],
+ * but accepts a string input for convenience.
+ * 
  * It's particularly useful for:
  * - Testing and prototyping
  * - Processing XML received as a string (e.g., from an API response)
@@ -343,17 +348,20 @@ public suspend fun <T> staks(
  * @param input The XML string to parse
  * @param namespaces The namespaces to use for resolving prefixes (default: empty map)
  * @param enableNamespaces Whether to enable namespace support (default: true)
+ * @param maxCacheSize The maximum number of XML events to cache for rewinding (default: Int.MAX_VALUE)
  * @param block The suspend block that defines how to parse the XML using the StaksContext
  * @return The result of the parsing operation as defined by the block
+ * @see staks
  */
 public suspend fun <T> staks(
     input: String, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true, 
+    enableNamespaces: Boolean = true,
+    maxCacheSize: Int = Int.MAX_VALUE,
     block: suspend StaksContext.() -> T
 ): T {
     val flow = staks(input.byteInputStream(), enableNamespaces)
-    val context = StaksContext(flow, namespaces, enableNamespaces)
+    val context = StaksContext(flow, namespaces, enableNamespaces, maxCacheSize)
     return context.block()
 }
 
@@ -361,7 +369,10 @@ public suspend fun <T> staks(
  * The main entry point for the Flow-based XML parsing DSL using a file input.
  * 
  * This function provides a convenient way to parse XML directly from a file.
- * It automatically handles opening and closing the file, ensuring proper resource management.
+ * It works the same way as the [staks] function that takes an [InputStream],
+ * but accepts a file input for convenience and automatically handles opening 
+ * and closing the file, ensuring proper resource management.
+ * 
  * It's particularly useful for:
  * - Processing XML files from the filesystem
  * - Handling large XML documents efficiently
@@ -402,18 +413,21 @@ public suspend fun <T> staks(
  * @param input The XML file to parse
  * @param namespaces The namespaces to use for resolving prefixes (default: empty map)
  * @param enableNamespaces Whether to enable namespace support (default: true)
+ * @param maxCacheSize The maximum number of XML events to cache for rewinding (default: Int.MAX_VALUE)
  * @param block The suspend block that defines how to parse the XML using the StaksContext
  * @return The result of the parsing operation as defined by the block
+ * @see staks
  */
 public suspend fun <T> staks(
     input: File, 
     namespaces: Map<String, String> = emptyMap(),
-    enableNamespaces: Boolean = true, 
+    enableNamespaces: Boolean = true,
+    maxCacheSize: Int = Int.MAX_VALUE,
     block: suspend StaksContext.() -> T
 ): T {
     input.inputStream().buffered().use {
         val flow = staks(input.inputStream().buffered(), enableNamespaces)
-        val context = StaksContext(flow, namespaces, enableNamespaces)
+        val context = StaksContext(flow, namespaces, enableNamespaces, maxCacheSize)
         return context.block()
     }
 }

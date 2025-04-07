@@ -75,6 +75,13 @@ public interface ValueResult {
      * @throws NullPointerException if the value is null
      */
     public fun value(): String
+
+    /**
+     * Gets the value as a string. This is an alias for [value].
+     *
+     * @return The string value
+     * @throws NullPointerException if the value is null
+     */
     public fun string(): String
 }
 
@@ -111,9 +118,13 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
     /**
      * Converts the value to a long.
+     * 
+     * This is a nullable version of [ValueResult.long] that returns null
+     * instead of throwing a NullPointerException when the value is null.
      *
      * @return The long value or null if the value is null
      * @throws NumberFormatException if the value cannot be converted to a long
+     * @see ValueResult.long
      */
     public fun long(): Long? = try {
         result?.long()
@@ -123,9 +134,13 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
     /**
      * Converts the value to a double.
+     * 
+     * This is a nullable version of [ValueResult.double] that returns null
+     * instead of throwing a NullPointerException when the value is null.
      *
      * @return The double value or null if the value is null
      * @throws NumberFormatException if the value cannot be converted to a double
+     * @see ValueResult.double
      */
     public fun double(): Double? = try {
         result?.double()
@@ -135,8 +150,12 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
     /**
      * Converts the value to a boolean.
+     * 
+     * This is a nullable version of [ValueResult.boolean] that returns null
+     * instead of throwing a NullPointerException when the value is null.
      *
      * @return The boolean value or null if the value is null
+     * @see ValueResult.boolean
      */
     public fun boolean(): Boolean? = try {
         result?.boolean()
@@ -146,8 +165,12 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
     /**
      * Gets the raw value.
+     * 
+     * This is a nullable version of [ValueResult.value] that returns null
+     * instead of throwing a NullPointerException when the value is null.
      *
      * @return The raw value or null if the value is null
+     * @see ValueResult.value
      */
     private fun value(): String? = try {
         result?.value()
@@ -155,7 +178,26 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
         null
     }
 
+    /**
+     * Operator function that returns the raw value.
+     * This is equivalent to calling [value].
+     * 
+     * This is a nullable version of the unary plus operator in [ValueResult] implementations
+     * that returns null instead of throwing a NullPointerException when the value is null.
+     *
+     * @return The raw value or null if the value is null
+     */
     public operator fun unaryPlus(): String? = value()
+
+    /**
+     * Gets the value as a string.
+     * 
+     * This is a nullable version of [ValueResult.string] that returns null
+     * instead of throwing a NullPointerException when the value is null.
+     *
+     * @return The string value or null if the value is null
+     * @see ValueResult.string
+     */
     public fun string(): String? = value()
 
     /**
@@ -168,9 +210,13 @@ public class NullableValueResult<T : ValueResult>(public val result: T?) {
 
 /**
  * Converts the value to an integer.
+ * 
+ * This is a nullable version of [ValueResult.int] that returns null
+ * instead of throwing a NullPointerException when the value is null.
  *
  * @return The integer value or null if the value is null
  * @throws NumberFormatException if the value cannot be converted to an integer
+ * @see ValueResult.int
  */
 public fun <T : ValueResult> NullableValueResult<T>.int(): Int? = try {
     result?.int()
@@ -185,47 +231,53 @@ public fun <T : ValueResult> NullableValueResult<T>.int(): Int? = try {
 public class TagValueResult(private val value: String?) : ValueResult {
     /**
      * Converts the tag value to an integer.
-     *
-     * @return The integer value of the tag value
-     * @throws NumberFormatException if the tag value cannot be converted to an integer
-     * @throws NullPointerException if the tag value is null
+     * 
+     * @see ValueResult.int
      */
     override fun int(): Int = value!!.toInt()
 
     /**
      * Converts the tag value to a long.
-     *
-     * @return The long value of the tag value
-     * @throws NumberFormatException if the tag value cannot be converted to a long
-     * @throws NullPointerException if the tag value is null
+     * 
+     * @see ValueResult.long
      */
     override fun long(): Long = value!!.toLong()
 
     /**
      * Converts the tag value to a double.
-     *
-     * @return The double value of the tag value
-     * @throws NumberFormatException if the tag value cannot be converted to a double
-     * @throws NullPointerException if the tag value is null
+     * 
+     * @see ValueResult.double
      */
     override fun double(): Double = value!!.toDouble()
 
     /**
      * Converts the tag value to a boolean.
-     *
-     * @return The boolean value of the tag value
-     * @throws NullPointerException if the tag value is null
+     * 
+     * @see ValueResult.boolean
      */
     override fun boolean(): Boolean = value!!.toBoolean()
 
     /**
      * Gets the raw value of the tag.
+     * 
+     * @see ValueResult.value
+     */
+    override fun value(): String = value!!
+
+    /**
+     * Operator function that returns the raw value of the tag.
+     * This is equivalent to calling [value].
      *
      * @return The raw value of the tag
      * @throws NullPointerException if the tag value is null
      */
-    override fun value(): String = value!!
     public operator fun unaryPlus(): String = value()
+
+    /**
+     * Gets the tag value as a string.
+     * 
+     * @see ValueResult.string
+     */
     override fun string(): String = value()
 
     /**
@@ -243,55 +295,53 @@ public class TagValueResult(private val value: String?) : ValueResult {
 public class AttributeResult(private val value: String?) : ValueResult {
     /**
      * Converts the attribute value to an integer.
-     *
-     * @return The integer value of the attribute value
-     * @throws NumberFormatException if the attribute value cannot be converted to an integer
-     * @throws NullPointerException if the attribute value is null
+     * 
+     * @see ValueResult.int
      */
     override fun int(): Int = value!!.toInt()
 
     /**
      * Converts the attribute value to a long.
-     *
-     * @return The long value of the attribute value
-     * @throws NumberFormatException if the attribute value cannot be converted to a long
-     * @throws NullPointerException if the attribute value is null
+     * 
+     * @see ValueResult.long
      */
     override fun long(): Long = value!!.toLong()
 
     /**
      * Converts the attribute value to a double.
-     *
-     * @return The double value of the attribute value
-     * @throws NumberFormatException if the attribute value cannot be converted to a double
-     * @throws NullPointerException if the attribute value is null
+     * 
+     * @see ValueResult.double
      */
     override fun double(): Double = value!!.toDouble()
 
     /**
      * Converts the attribute value to a boolean.
-     *
-     * @return The boolean value of the attribute value
-     * @throws NullPointerException if the attribute value is null
+     * 
+     * @see ValueResult.boolean
      */
     override fun boolean(): Boolean = value!!.toBoolean()
 
     /**
      * Gets the raw value of the attribute.
-     *
-     * @return The raw value of the attribute
-     * @throws NullPointerException if the attribute value is null
+     * 
+     * @see ValueResult.value
      */
     override fun value(): String = value!!
 
     /**
      * Operator function that returns the raw value of the attribute.
-     * This is equivalent to calling value().
+     * This is equivalent to calling [value].
      *
      * @return The raw value of the attribute
      * @throws NullPointerException if the attribute value is null
      */
     public operator fun unaryPlus(): String = value()
+
+    /**
+     * Gets the attribute value as a string.
+     * 
+     * @see ValueResult.string
+     */
     override fun string(): String = value()
 
     /**

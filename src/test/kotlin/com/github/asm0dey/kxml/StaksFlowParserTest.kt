@@ -7,10 +7,7 @@ import kotlinx.coroutines.runBlocking
 import org.intellij.lang.annotations.Language
 import java.io.File
 import java.io.InputStream
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class StaksFlowParserTest {
 
@@ -211,4 +208,46 @@ class StaksFlowParserTest {
         assertEquals("value", result2)
         assertTrue(count < 270, "We encountered $count '<' characters. Expected '<' characters to be limited to 270.")
     }
+
+    @Test
+    fun `out-of-order elements`() = runBlocking {
+        @Language("XML") val inp = """
+            <root>
+                <item>value</item>
+                <item2>value2</item2>
+            </root>
+        """.trimIndent().byteInputStream()
+
+        val result = staks(inp) {
+            val res1 = tagValue("item2").string()
+            val res2 = tagValue("item").string()
+            Pair(res1, res2)
+        }
+
+        assertEquals("value2" to "value", result)
+    }
+
+    @Test
+    fun `cache remains small if requested`() = runBlocking {
+        @Language("XML") val b = StringBuilder()
+        b.append("<root>")
+        repeat(100000) {
+            b.append("<notneeded>value$it</notneeded>")
+        }
+        b.append("<item>value</item>")
+        b.append("</root>")
+        val inp = b.toString()
+        var ctx: StaksContext? = null
+        val res = staks(inp.byteInputStream(), maxCacheSize = 50) {
+            ctx = this
+            tagValue("item").string()
+        }
+        assertEquals("value", res)
+        assertNotNull(ctx)
+        assertTrue(
+            ctx!!.cachedEvents.size <= 50,
+            "Requested mac cache size was 50, but actual was ${ctx!!.cachedEvents.size}"
+        )
+    }
+
 }
