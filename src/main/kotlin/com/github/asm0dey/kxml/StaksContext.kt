@@ -429,37 +429,13 @@ public class StaksContext(
                     if (enableNamespaces && attributeNamespaceURI != null) {
                         // If attribute namespace URI is specified and namespace support is enabled,
                         // find the attribute with the matching namespace URI and local name
-                        var found = false
-                        for ((attrName, attrValue) in event.attributes) {
-                            // Check if this attribute has the specified namespace URI
-                            if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
-                                // Extract the local name of this attribute
-                                val attrLocalName = if (attrName.contains(':')) {
-                                    attrName.split(':', limit = 2)[1]
-                                } else {
-                                    attrName
-                                }
-
-                                // Check if the local name matches
-                                if (attrLocalName == attributeLocalName) {
-                                    emit(attrValue)
-                                    found = true
-                                    foundInCache = true
-                                    break
-                                }
-                            }
-                        }
-
-                        // If no matching attribute was found and the attribute name includes a prefix,
-                        // try looking up the attribute by its full name
-                        if (!found && attributePrefix != null) {
-                            val fullName = "$attributePrefix:$attributeLocalName"
-                            val value = event.attributes[fullName]
-                            if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
-                                emit(value)
-                                foundInCache = true
-                            }
-                        }
+                        if (matchAttributeAndEmit(
+                                event,
+                                attributeNamespaceURI,
+                                attributeLocalName,
+                                attributePrefix
+                            )
+                        ) return@flow
                     } else {
                         // If no attribute namespace URI is specified or namespace support is disabled,
                         // look up the attribute by name
@@ -553,94 +529,75 @@ public class StaksContext(
 
         // First, try to find the attribute in the cached events
         for (event in cachedEvents) {
-            if (event is XmlEvent.StartElement) {
-                if (attributeNamespaceURI != null) {
-                    // If attribute namespace URI is specified, find the attribute with the matching namespace URI and local name
-                    for ((attrName, attrValue) in event.attributes) {
-                        // Check if this attribute has the specified namespace URI
-                        if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
-                            // Extract the local name of this attribute
-                            val attrLocalName = if (attrName.contains(':')) {
-                                attrName.split(':', limit = 2)[1]
-                            } else {
-                                attrName
-                            }
-
-                            // Check if the local name matches
-                            if (attrLocalName == attributeLocalName) {
-                                emit(attrValue)
-                                return@flow
-                            }
-                        }
-                    }
-
-                    // If no matching attribute was found and the attribute name includes a prefix,
-                    // try looking up the attribute by its full name
-                    if (attributePrefix != null) {
-                        val fullName = "$attributePrefix:$attributeLocalName"
-                        val value = event.attributes[fullName]
-                        if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
-                            emit(value)
-                            return@flow
-                        }
-                    }
-                } else {
-                    // If no attribute namespace URI is specified, just look up the attribute by name
-                    val value = event.attributes[attributeName]
-                    if (value != null) {
-                        emit(value)
-                        return@flow
-                    }
-                }
-            }
+            emitAttributeValue(event, attributeNamespaceURI, attributeLocalName, attributePrefix, attributeName)
         }
 
         // If the attribute wasn't found in the cache, process the flow
         flow.collect { event ->
             // Add the event to the cache
             addToCache(event)
+            emitAttributeValue(event, attributeNamespaceURI, attributeLocalName, attributePrefix, attributeName)
+        }
+    }
 
-            if (event is XmlEvent.StartElement) {
-                if (attributeNamespaceURI != null) {
-                    // If attribute namespace URI is specified, find the attribute with the matching namespace URI and local name
-                    for ((attrName, attrValue) in event.attributes) {
-                        // Check if this attribute has the specified namespace URI
-                        if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
-                            // Extract the local name of this attribute
-                            val attrLocalName = if (attrName.contains(':')) {
-                                attrName.split(':', limit = 2)[1]
-                            } else {
-                                attrName
-                            }
-
-                            // Check if the local name matches
-                            if (attrLocalName == attributeLocalName) {
-                                emit(attrValue)
-                                return@collect
-                            }
-                        }
-                    }
-
-                    // If no matching attribute was found and the attribute name includes a prefix,
-                    // try looking up the attribute by its full name
-                    if (attributePrefix != null) {
-                        val fullName = "$attributePrefix:$attributeLocalName"
-                        val value = event.attributes[fullName]
-                        if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
-                            emit(value)
-                            return@collect
-                        }
-                    }
-                } else {
-                    // If no attribute namespace URI is specified, just look up the attribute by name
-                    val value = event.attributes[attributeName]
-                    if (value != null) {
-                        emit(value)
-                        return@collect
-                    }
+    private suspend fun FlowCollector<String>.emitAttributeValue(
+        event: XmlEvent,
+        attributeNamespaceURI: String?,
+        attributeLocalName: String,
+        attributePrefix: String?,
+        attributeName: String
+    ) {
+        if (event is XmlEvent.StartElement) {
+            if (attributeNamespaceURI != null) {
+                // If attribute namespace URI is specified,
+                // find the attribute with the matching namespace URI and local name
+                if (matchAttributeAndEmit(event, attributeNamespaceURI, attributeLocalName, attributePrefix)) return
+            } else {
+                // If no attribute namespace URI is specified, just look up the attribute by name
+                val value = event.attributes[attributeName]
+                if (value != null) {
+                    emit(value)
+                    return
                 }
             }
         }
+    }
+
+    private suspend fun FlowCollector<String>.matchAttributeAndEmit(
+        event: XmlEvent.StartElement,
+        attributeNamespaceURI: String?,
+        attributeLocalName: String,
+        attributePrefix: String?
+    ): Boolean {
+        for ((attrName, attrValue) in event.attributes) {
+            // Check if this attribute has the specified namespace URI
+            if (event.attributeNamespaces[attrName] == attributeNamespaceURI) {
+                // Extract the local name of this attribute
+                val attrLocalName = if (attrName.contains(':')) {
+                    attrName.split(':', limit = 2)[1]
+                } else {
+                    attrName
+                }
+
+                // Check if the local name matches
+                if (attrLocalName == attributeLocalName) {
+                    emit(attrValue)
+                    return true
+                }
+            }
+        }
+
+        // If no matching attribute was found and the attribute name includes a prefix,
+        // try looking up the attribute by its full name
+        if (attributePrefix != null) {
+            val fullName = "$attributePrefix:$attributeLocalName"
+            val value = event.attributes[fullName]
+            if (value != null && event.attributeNamespaces[fullName] == attributeNamespaceURI) {
+                emit(value)
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -763,21 +720,20 @@ public class StaksContext(
 
             when (event) {
                 is XmlEvent.StartElement -> {
-                    val (nameMatches, namespaceMatches) = isElementMatch(
-                        prefix,
-                        event,
-                        localName,
-                        namespaceURI,
-                        event.name == elementName
-                    )
-
-                    if (nameMatches && namespaceMatches && depth == 0) {
-                        insideElement = true
-                        events = mutableListOf(event)
-                    } else if (insideElement) {
-                        depth++
-                        events.add(event)
-                    }
+                    val (newDepth, newEvents, nextInsideElement) =
+                        computeNextCollectElementsFlowState(
+                            prefix,
+                            event,
+                            localName,
+                            namespaceURI,
+                            elementName,
+                            depth,
+                            insideElement,
+                            events
+                        )
+                    depth = newDepth
+                    events = newEvents
+                    insideElement = nextInsideElement
                 }
 
                 is XmlEvent.EndElement -> {
@@ -827,21 +783,19 @@ public class StaksContext(
 
                 when (event) {
                     is XmlEvent.StartElement -> {
-                        val (nameMatches, namespaceMatches) = isElementMatch(
+                        val (newDepth, newEvents, nextInsideElement) = computeNextCollectElementsFlowState(
                             prefix,
                             event,
                             localName,
                             namespaceURI,
-                            event.name == elementName
+                            elementName,
+                            depth,
+                            insideElement,
+                            events
                         )
-
-                        if (nameMatches && namespaceMatches && depth == 0) {
-                            insideElement = true
-                            events = mutableListOf(event)
-                        } else if (insideElement) {
-                            depth++
-                            events.add(event)
-                        }
+                        depth = newDepth
+                        events = newEvents
+                        insideElement = nextInsideElement
                     }
 
                     is XmlEvent.EndElement -> {
@@ -878,6 +832,37 @@ public class StaksContext(
                 }
             }
         }
+    }
+
+    private fun computeNextCollectElementsFlowState(
+        prefix: String?,
+        event: XmlEvent.StartElement,
+        localName: String,
+        namespaceURI: String?,
+        elementName: String,
+        curDepth: Int,
+        insideElement: Boolean,
+        curEvents: MutableList<XmlEvent>
+    ): Triple<Int, MutableList<XmlEvent>, Boolean> {
+        var newDepth = curDepth
+        var newInsideElement = insideElement
+        var newEvents = curEvents
+        val (nameMatches, namespaceMatches) = isElementMatch(
+            prefix,
+            event,
+            localName,
+            namespaceURI,
+            event.name == elementName
+        )
+
+        if (nameMatches && namespaceMatches && newDepth == 0) {
+            newInsideElement = true
+            newEvents = mutableListOf(event)
+        } else if (newInsideElement) {
+            newDepth++
+            newEvents.add(event)
+        }
+        return Triple(newDepth, newEvents, newInsideElement)
     }
 
     private fun parseName(elementName: String) = if (elementName.contains(':')) {
