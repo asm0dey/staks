@@ -16,4 +16,4 @@ kotlinx-coroutines = "1.10.1"
 
 kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 
-aalto-stax = "com.fasterxml.woodstox:woodstox-core:7.1.0"
+aalto-stax = "com.fasterxml.woodstox:woodstox-core:7.1.1"
