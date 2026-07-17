@@ -4,7 +4,7 @@
 
 org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref="kotlin" }
 
-org-jetbrains-kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.9.1" }
+org-jetbrains-kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.9.9" }
 
 [versions]
 
