@@ -1,7 +1,7 @@
 plugins {
     alias(libs.plugins.org.jetbrains.kotlin.jvm)
     alias(libs.plugins.org.jetbrains.kotlinx.kover)
-    id("org.jetbrains.dokka") version "2.0.0"
+    id("org.jetbrains.dokka") version "2.2.0"
     `maven-publish`
     signing
 }
